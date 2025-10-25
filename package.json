@@ -1,0 +1,48 @@
+{
+  "name": "CPPS-Launcher",
+  "version": "1.0.0",
+  "description": "Lightweight CPPS Launcher",
+  "author": "Dragon9135",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "make": "electron-forge make",
+    "package": "electron-forge package"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "electron": "5.0.13"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "asar": true,
+        "icon": "./icon",
+        "extraResource": [
+          "./plugins"
+        ]
+      },
+      "rebuildConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+             "setupIcon": "./icon.ico"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "win32"
+          ]
+        }
+      ]
+    }
+  },
+  "dependencies": {}
+}

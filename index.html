@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CPPS Launcher</title>
+  <style>
+    /* Simple & Optimized HTML Menu Style */
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; display: flex; flex-direction: column; background-color: #000; }
+    #menu-bar { background-color: #2c2c2c; display: flex; flex-direction: row; padding: 0 5px; flex-shrink: 0; border-bottom: 1px solid #444; color: white; user-select: none; }
+    .menu-item { padding: 8px 12px; cursor: pointer; position: relative; font-size: 14px; }
+    .menu-item:hover { background-color: #4a4a4a; }
+    .dropdown-content { display: none; position: absolute; left: 0; top: 100%; background-color: #3b3b3b; min-width: 180px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5); z-index: 1; }
+    .dropdown-item { color: white; padding: 10px 15px; text-decoration: none; display: block; font-size: 14px; }
+    .dropdown-item:hover { background-color: #575757; }
+    .dropdown-content.show { display: block; }
+    #content { flex-grow: 1; position: relative; /* Added for modal positioning */ }
+    webview { width: 100%; height: 100%; border: none; }
+
+    /* =================================== */
+    /* === NEW MODAL STYLES (INSTEAD OF ALERT) === */
+    /* =================================== */
+    #modal-overlay {
+      display: none; /* Hidden by default */
+      position: absolute; /* Positioned within content */
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+    #modal-about {
+      background-color: #3b3b3b;
+      padding: 20px 30px;
+      border-radius: 5px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      text-align: center;
+      border: 1px solid #555;
+    }
+    #modal-close-btn {
+      background-color: #575757;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      margin-top: 15px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    #modal-close-btn:hover {
+      background-color: #6a6a6a;
+    }
+    /* =================================== */
+
+  </style>
+</head>
+<body>
+
+  <div id="menu-bar">
+    <div class="menu-item" id="servers-menu-trigger">
+      Servers
+      <div class="dropdown-content" id="servers-dropdown">
+        <div class="dropdown-item" data-url="https://play.newcp.net/">New Club Penguin</div>
+        <div class="dropdown-item" data-url="https://media.cpps.to/play/">CPPS.to</div>
+        <div class="dropdown-item" data-url="https://play.antiquepengu.in/">Antique Penguin</div>
+        <div class="dropdown-item" data-url="https://play.cpzero.net/">CP Zero</div>
+      </div>
+    </div>
+    <div class="menu-item" id="options-menu-trigger">
+      Options
+      <div class="dropdown-content" id="options-dropdown">
+        <div class="dropdown-item" data-action="reload">Reload</div>
+      </div>
+    </div>
+    <div class="menu-item" id="btn-about">
+      About
+    </div>
+  </div>
+
+  <div id="content">
+    <webview
+      id="game-view"
+      src="about:blank"
+      plugins
+      disablewebsecurity
+      useragent="Mozilla/5.o (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
+    ></webview>
+
+    <div id="modal-overlay">
+      <div id="modal-about">
+        <h3>CPPS Launcher v1.0 (Lightweight)</h3>
+        <p>Created by Dragon9135.</p>
+        <button id="modal-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === ELEMENTS ===
+    const webview = document.getElementById('game-view');
+    const serversDropdown = document.getElementById('servers-dropdown');
+    const optionsDropdown = document.getElementById('options-dropdown');
+    
+    // === NEW MODAL ELEMENTS ===
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const btnAbout = document.getElementById('btn-about');
+
+
+    // --- OPTIMIZED MENU CONTROL ---
+    function setupMenuToggle(triggerId, dropdownId) {
+      const trigger = document.getElementById(triggerId);
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const otherDropdownId = (dropdownId === 'servers-dropdown') ? 'options-dropdown' : 'servers-dropdown';
+        document.getElementById(otherDropdownId).classList.remove('show');
+        document.getElementById(dropdownId).classList.toggle('show');
+      });
+    }
+    setupMenuToggle('servers-menu-trigger', 'servers-dropdown');
+    setupMenuToggle('options-menu-trigger', 'options-dropdown');
+
+    // Close all menus when clicking outside
+    window.addEventListener('click', () => {
+      serversDropdown.classList.remove('show');
+      optionsDropdown.classList.remove('show');
+    });
+    
+
+    // =================================================================
+    // =========== FIX (MODAL INSTEAD OF ALERT) ===========
+    // =================================================================
+    
+    function closeModal() {
+        modalOverlay.style.display = 'none'; // Hide modal
+        webview.focus(); // RETURN FOCUS TO WEBVIEW
+    }
+
+    btnAbout.addEventListener('click', () => {
+      modalOverlay.style.display = 'flex'; // Show modal
+    });
+
+    modalCloseBtn.addEventListener('click', closeModal);
+
+    // (Optional) Close when clicking outside
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) { // Only if the background is clicked
+        closeModal();
+      }
+    });
+    // =================================================================
+
+
+    // Event Delegation: For Server and Options lists
+    function handleMenuClick(e, dropdown) {
+      if (e.target.classList.contains('dropdown-item')) {
+        const url = e.target.getAttribute('data-url');
+        const action = e.target.getAttribute('data-action');
+        if (url) {
+          webview.loadURL(url);
+        } else if (action === 'reload') {
+          webview.reload();
+        }
+        dropdown.classList.remove('show'); // Close the menu
+      }
+    }
+    serversDropdown.addEventListener('click', (e) => handleMenuClick(e, serversDropdown));
+    optionsDropdown.addEventListener('click', (e) => handleMenuClick(e, optionsDropdown));
+
+
+    // --- REQUIRED FIXES (Network Blocker & Comprehensive List) ---
+    const blockList = [
+      'googlesyndication.com', 'googleadservices.com', 'doubleclick.net',
+      'ads.pubmatic.com', 'adnxs.com', 'rubiconproject.com',
+      'openx.net', 'criteo.com', 'taboola.com', 'outbrain.com',
+      'amazon-adsystem.com', 'adsrvr.org', 'bidswitch.net',
+      'popads.net', 'propellerads.com', 'adsterra.com',
+      'google-analytics.com', 'analytics.google.com', 'googletagmanager.com',
+      'facebook.net', 'connect.facebook.net', 'analytics.js',
+      'scorecardresearch.com', 'quantserve.com', 'adobedtm.com',
+      'hotjar.com', 'moatads.com', 'rlcdn.com',
+      'contextweb.com', 'dotomi.com', 'casalemedia.com', 't.co',
+      'yandex.ru/metrika'
+    ];
+    const cosmeticFilterCSS_NewCP = `
+      #newcp_net_160x600_left_sticky,
+      #newcp_net_160x600_right_sticky,
+      [style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;"] {
+        display: none !important; visibility: hidden !important; width: 0 !important; height: 0 !important; overflow: hidden !important;
+      }
+    `;
+
+    // Error Listeners
+    webview.addEventListener('crashed', (e) => console.error('--- WEBVIEW CRASHED ---', e.reason));
+    webview.addEventListener('did-fail-load', (e) => console.error('--- LOAD FAILED ---', e.errorDescription));
+
+    // CODE TO RUN WHEN WEBVIEW IS READY
+    webview.addEventListener('dom-ready', () => {
+      console.log('Webview session ready for the first time. Applying fixes...');
+
+      const wc = webview.getWebContents();
+      const session = wc.session;
+
+      // 1. BLACK SCREEN FIX (Required)
+      session.webRequest.onHeadersReceived((details, callback) => {
+        const headers = details.responseHeaders;
+        const relevantTypes = ['main_frame', 'sub_frame', 'object'];
+        if (relevantTypes.includes(details.resourceType)) {
+          const xFrameKey = Object.keys(headers).find(k => k.toLowerCase() === 'x-frame-options');
+          if (xFrameKey) delete headers[xFrameKey];
+          const cspKey = Object.keys(headers).find(k => k.toLowerCase() === 'content-security-policy');
+          if (cspKey && headers[cspKey].length > 0) {
+            headers[cspKey] = headers[cspKey][0].split(';').filter(d => !d.trim().startsWith('frame-ancestors')).join(';');
+          }
+        }
+        callback({ responseHeaders: headers });
+      });
+
+      // 2. NETWORK AD BLOCKER
+      session.webRequest.onBeforeRequest((details, callback) => {
+        const urlString = details.url;
+        const isBlocked = blockList.some(item => urlString.includes(item));
+        if (isBlocked) {
+          console.log('Ad Blocker: Blocking request to', urlString);
+          callback({ cancel: true });
+        } else {
+          callback({ cancel: false });
+        }
+      });
+
+      // 3. NewCP Custom Cosmetic Filter Injector
+      webview.addEventListener('did-finish-load', () => {
+        const currentURL = webview.getURL();
+        if (currentURL.includes('newcp.net')) {
+          console.log('Applying NewCP cosmetic filters...');
+          webview.insertCSS(cosmeticFilterCSS_NewCP);
+        }
+      });
+
+      // 4. LOAD DEFAULT SERVER
+      console.log('Loading default server (NewCP)...');
+      webview.loadURL('https://play.newcp.net/');
+
+    }, { once: true }); // <-- MAIN LOGIC PREVENTING LOOP
+
+  </script>
+</body>
+</html>
