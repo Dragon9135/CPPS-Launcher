@@ -17,8 +17,8 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
 
 ## Technology Stack
 
-  * **Electron:** `5.0.13` (Crucial for Flash support)
-  * **Node.js:** `16.x` (Required for compatibility with Electron 5. Newer Node versions **will not work**.)
+  * **Electron:** `11.5.0` (Crucial for Flash support)
+  * **Node.js:** `18.x` (Required for compatibility with Electron 11. Newer Node versions **will not work**.)
   * **Pepper Flash Plugin:** Requires manual addition of `pepflashplayer.dll` (Windows), `PepperFlashPlayer.plugin` (macOS), or `libpepflashplayer.so` (Linux).
   * **Electron Forge:** Used for packaging the application.
 
@@ -35,7 +35,7 @@ To build or modify the launcher:
 
 ### Prerequisites
 
-  * **Node.js v16.x:** You must install a version from the 16.x series (e.g., `16.20.2`). [Node.js Previous Releases](https://nodejs.org/en/download/releases).
+  * **Node.js v18.x:** You must install a version from the 16.x series (e.g., `18.20.8`). [Node.js Previous Releases](https://nodejs.org/en/download/releases).
   * **Git:** For cloning the repository.
   * **Pepper Flash Plugin:** You must obtain the `pepflashplayer` file for your OS.
 
