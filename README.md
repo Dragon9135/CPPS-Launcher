@@ -7,7 +7,7 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
   * **Multi-Server Support:** Easily switch between popular servers, including:
       * New Club Penguin
       * CPPS.to
-      * CP Dimensions
+      * Antique Penguin
       * Club Penguin Zero
 
   * **Lightweight & Optimized:** Built to consume minimal system resources (CPU/RAM) using optimized Chromium flags.
