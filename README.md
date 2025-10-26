@@ -9,6 +9,7 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
       * CPPS.to
       * Antique Penguin
       * Club Penguin Zero
+      * Original Penguin
 
   * **Lightweight & Optimized:** Built to consume minimal system resources (CPU/RAM) using optimized Chromium flags.
   * **Flash Compatibility:** Uses Electron 5.x, one of the last versions to support the Pepper Flash (PPAPI) plugin.
