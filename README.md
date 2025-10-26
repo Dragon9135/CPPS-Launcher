@@ -36,7 +36,7 @@ To build or modify the launcher:
 
 ### Prerequisites
 
-  * **Node.js v18.x:** You must install a version from the 16.x series (e.g., `18.20.8`). [Node.js Previous Releases](https://nodejs.org/en/download/releases).
+  * **Node.js v18.x:** You must install a version from the 18.x series (e.g., `18.20.8`). [Node.js Previous Releases](https://nodejs.org/en/download/releases).
   * **Git:** For cloning the repository.
   * **Pepper Flash Plugin:** You must obtain the `pepflashplayer` file for your OS.
 
