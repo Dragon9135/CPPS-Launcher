@@ -71,7 +71,7 @@ To build or modify the launcher:
     npm run build
     ```
 
-    The output files will be in the `out` folder.
+    The output files will be in the `win-unpacked` folder.
 
 ## Project Rationale
 
