@@ -68,7 +68,7 @@ To build or modify the launcher:
 5.  **Build the installer:**
 
     ```bash
-    npm run make
+    npm run build
     ```
 
     The output files will be in the `out` folder.
