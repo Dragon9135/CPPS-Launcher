@@ -21,7 +21,7 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
   * **Native App Controls:**
       * **Toggle Fullscreen:** Switch to a native fullscreen window using `F11`.
       * **Zoom Controls:** Zoom in (`Ctrl`+`=`), out (`Ctrl`+`-`), or reset (`Ctrl`+`0`) to adjust the game's size.
-      * **Fit Flash (Experimental):** An option to attempt stretching the Flash game to fill the entire window.
+      * **Fit Flash:** An option to attempt stretching the Flash game to fill the entire window.
 
   * **Check for Updates:** A menu item (`Options` \> `Check for Updates`) that opens the project's GitHub Releases page.
 
