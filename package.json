@@ -1,6 +1,6 @@
 {
   "name": "CPPS-Launcher",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Lightweight Club Penguin (CPPS) Launcher",
   "author": "Dragon9135",
   "main": "main.js",
@@ -27,7 +27,9 @@
       "main.js",
       "index.html",
       "preload.js",
-      "package.json"
+      "package.json",
+      "icon.ico",
+      "icon.png"
     ],
     "extraResources": [
       {
