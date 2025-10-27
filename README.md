@@ -13,9 +13,7 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
       * Original Penguin
 
   * **Flash Plugin Verification:** Automatically checks on startup if the required `pepflashplayer.dll` files are present. If not, it provides a detailed error message explaining the exact paths needed.
-
   * **Clear Browsing & Flash Data:** A simple menu option (`Options` \> `Clear Data`) to clear all cache, cookies, and Flash Player data (LSOs), which can resolve common login or loading issues.
-
   * **Discord Rich Presence:** Automatically shows your "Playing Club Penguin" status on Discord (only in the packaged application).
 
   * **Native App Controls:**
@@ -24,11 +22,8 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
       * **Fit Flash:** An option to attempt stretching the Flash game to fill the entire window.
 
   * **Check for Updates:** A menu item (`Options` \> `Check for Updates`) that opens the project's GitHub Releases page.
-
   * **Lightweight & Optimized:** Built to consume minimal system resources (CPU/RAM) using optimized Chromium flags.
-
   * **Ad & Tracker Blocking:** Includes a basic blocklist for common ad and tracking domains.
-
   * **Black Screen Fix:** Modifies headers (`X-Frame-Options`, `Content-Security-Policy`) on the fly to allow CPPS sites that normally block embedding to load correctly.
 
 ## Technology Stack
