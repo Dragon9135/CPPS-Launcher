@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPPS Launcher - Lightweight Flash Player</title>
+    <meta name="description" content="A minimal, fast, and open-source launcher for playing various Club Penguin Private Servers (CPPS) using Flash Player.">
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #1a1a1a; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #2c2c2c; /* Slightly lighter container */
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            color: #b0b0b0;
+        }
+
+        main h2 {
+            font-size: 1.8em;
+            color: #ffffff;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+
+        .features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .features li {
+            background-color: #3a3a3a;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 4px;
+            border-left: 4px solid #007acc; /* Accent color */
+        }
+
+        /* Added style for strong tag within list items */
+        .features li strong {
+            color: #ffffff;
+            display: block; /* Make strong tag take its own line */
+            margin-bottom: 3px;
+        }
+
+        .download-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #007acc; /* Primary button color */
+            color: #ffffff;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #005fa3; /* Darker shade on hover */
+            transform: translateY(-2px);
+        }
+
+        .button.secondary {
+            background-color: #555; /* Secondary button color */
+        }
+
+        .button.secondary:hover {
+            background-color: #444;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #aaa;
+            text-decoration: none;
+        }
+        footer a:hover {
+            color: #ccc;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CPPS Launcher</h1>
+            <p>A minimal, fast, and open-source launcher for Flash-based Club Penguin Private Servers.</p>
+        </header>
+
+        <main>
+            <section class="description">
+                <p>This launcher uses Electron 11.5.0, optimized for compatibility with legacy Flash Player servers. It includes essential features while remaining incredibly lightweight and resource-friendly.</p>
+            </section>
+
+            <section class="features">
+                <h2>✨ Features</h2>
+                <ul>
+                    <li>
+                        <strong>Incredibly Lightweight & Fast</strong> Designed for minimal resource usage (Low CPU & RAM) and quick startup, focusing purely on running the game.
+                    </li>
+                    <li>
+                        <strong>Native Windows Menu</strong> Uses the standard Windows menu bar, ensuring seamless integration with your system theme (Including Light/Dark mode).
+                    </li>
+                    <li>
+                        <strong>Built-in Ad Blocking</strong> Blocks requests to known advertising and tracking domains at the network level, providing a cleaner experience.
+                    </li>
+                    <li>
+                        <strong>Cosmetic Filtering</strong> Injects custom CSS to hide specific visual clutter and ad banners on certain servers (e.g., NewCP).
+                    </li>
+                    <li>
+                        <strong>Crisp Flash Rendering</strong> Forces 100% display scaling (disables OS scaling for the app) to prevent Flash content from appearing blurry on high-DPI monitors.
+                    </li>
+                    <li>
+                        <strong>32-Bit & 64-Bit Windows Support</strong> Automatically detects your system architecture and uses the appropriate included Flash Player plugin (`pepflashplayer.dll`).
+                    </li>
+                    <li>
+                        <strong>Discord Rich Presence</strong> Shows your activity as "Playing Club Penguin" in your Discord status while the launcher is running (Requires Discord desktop app).
+                    </li>
+                    <li>
+                        <strong>Manual Update Check</strong> A simple menu option ("Options" -> "Check for Updates") that opens the project's latest release page on GitHub in your browser.
+                    </li>
+                    <li>
+                        <strong>Clear Browsing & Flash Data</strong> An option to easily clear the application's cache, cookies, local storage, and importantly, the Flash Player's saved data (LSOs / "Flash Cookies") to resolve potential issues or reset game progress.
+                    </li>
+                    <li>
+                        <strong>Fit Flash to Window</strong> Attempts to stretch the Flash game content to fill the entire launcher window using CSS injection. Results may vary depending on the game.
+                    </li>
+                    <li>
+                        <strong>Zoom Controls</strong> Allows you to zoom the game view in, out, or reset it using standard keyboard shortcuts (Ctrl+Plus, Ctrl+Minus, Ctrl+0) or the Options menu.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="download-section">
+                <h2>Download Latest Version</h2>
+                <p>Get the latest installer or portable version for Windows.</p>
+                <a href="https://github.com/Dragon9135/CPPS-Launcher/releases/latest" class="button" target="_blank" rel="noopener noreferrer">
+                    Go to Downloads
+                </a>
+                <p style="margin-top: 20px;">Check out the source code on GitHub!</p>
+                <a href="https://github.com/Dragon9135/CPPS-Launcher" class="button secondary" target="_blank" rel="noopener noreferrer">
+                    View Source Code
+                </a>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Dragon9135. Released under the <a href="https://github.com/Dragon9135/CPPS-Launcher/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>.</p>
+        </footer>
+    </div>
+</body>
+</html>
