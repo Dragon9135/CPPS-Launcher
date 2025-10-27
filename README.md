@@ -33,8 +33,8 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
 
 ## Technology Stack
 
-  * **Electron:** `11.5.0` (Crucial for Flash support)
-  * **Node.js:** `18.x` (Required for `electron-builder` and compatibility with Electron 11)
+  * **Electron:** `11.5.0` (Crucial for Flash support).
+  * **Node.js:** `18.x` (Required for `electron-builder` and compatibility with Electron 11).
   * **Pepper Flash Plugin:** Requires manual addition of `pepflashplayer.dll` (**Windows only**).
   * **Electron Builder:** Used for packaging the application into an installer and portable `.exe`.
 
@@ -68,13 +68,9 @@ To build or modify the launcher:
     This is the most critical step. The app is hard-coded to look for plugins based on the computer's architecture.
 
       * Create a folder named `plugins` in the project's root directory.
-
       * Inside `plugins`, create two more folders: `x86` and `x64`.
-
       * Place the **32-bit** `pepflashplayer.dll` inside the `plugins/x86/` folder.
-
       * Place the **64-bit** `pepflashplayer.dll` inside the `plugins/x64/` folder.
-
       * The final structure should be:
     ```
     CPPS-Launcher/
