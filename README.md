@@ -11,22 +11,29 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
       * Antique Penguin
       * Club Penguin Zero
       * Original Penguin
+
   * **Flash Plugin Verification:** Automatically checks on startup if the required `pepflashplayer.dll` files are present. If not, it provides a detailed error message explaining the exact paths needed.
-  * **Clear Browsing & Flash Data:** A simple menu option (`Options` \> `Clear Data`) to clear all cache, cookies, and Flash Player data (LSOs), which can resolve common login or loading issues.
+
+  * **Clear Browsing & Flash Data:** A simple menu option (`Options` \> `Clear Browsing & Flash Data...`) to clear all cache, cookies, and Flash Player data (LSOs), which can resolve common login or loading issues.
+
   * **Discord Rich Presence:** Automatically shows your "Playing Club Penguin" status on Discord (only in the packaged application).
+
   * **Native App Controls:**
       * **Toggle Fullscreen:** Switch to a native fullscreen window using `F11`.
       * **Zoom Controls:** Zoom in (`Ctrl`+`=`), out (`Ctrl`+`-`), or reset (`Ctrl`+`0`) to adjust the game's size.
       * **Fit Flash (Experimental):** An option to attempt stretching the Flash game to fill the entire window.
-  * **Check for Updates:** A menu item (`Options` \> `Check for Updates`) that opens the project's GitHub Releases page.
+
+  * **Check for Updates:** A menu item (`Options` \> `Check for Updates...`) that opens the project's GitHub Releases page.
+
   * **Lightweight & Optimized:** Built to consume minimal system resources (CPU/RAM) using optimized Chromium flags.
+
   * **Ad & Tracker Blocking:** Includes a basic blocklist for common ad and tracking domains.
+
   * **Black Screen Fix:** Modifies headers (`X-Frame-Options`, `Content-Security-Policy`) on the fly to allow CPPS sites that normally block embedding to load correctly.
 
 ## Technology Stack
 
   * **Electron:** `11.5.0` (Crucial for Flash support)
-
   * **Node.js:** `18.x` (Required for `electron-builder` and compatibility with Electron 11)
   * **Pepper Flash Plugin:** Requires manual addition of `pepflashplayer.dll` (**Windows only**).
   * **Electron Builder:** Used for packaging the application into an installer and portable `.exe`.
@@ -45,7 +52,6 @@ To build or modify the launcher:
 ### Prerequisites
 
   * **Node.js v18.x:** You **must** install a version from the 18.x series (e.g., `18.20.8`). Newer Node versions will not work. [Node.js Previous Releases](https://nodejs.org/en/download/releases).
-
   * **Git:** For cloning the repository.
   * **Pepper Flash Plugin:** You must obtain both the 32-bit (`ia32`) and 64-bit (`x64`) versions of `pepflashplayer.dll`.
 
@@ -64,8 +70,11 @@ To build or modify the launcher:
       * Create a folder named `plugins` in the project's root directory.
 
       * Inside `plugins`, create two more folders: `x86` and `x64`.
+
       * Place the **32-bit** `pepflashplayer.dll` inside the `plugins/x86/` folder.
+
       * Place the **64-bit** `pepflashplayer.dll` inside the `plugins/x64/` folder.
+
       * The final structure should be:
     ```
     CPPS-Launcher/
