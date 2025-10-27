@@ -34,7 +34,6 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
 ## Usage (For End Users)
 
 1.  Download the latest installer (`CPPS.Launcher.Setup.vX.X.X.exe`) or portable (`CPPS.Launcher.vX.X.X.exe`) from the [GitHub Releases](https://github.com/Dragon9135/CPPS-Launcher/releases) page.
-
 2.  If using the installer, run it.
 3.  Launch the application.
 4.  Select a server from the "Servers" menu to begin.
@@ -111,7 +110,6 @@ With Adobe Flash Player's end-of-life, accessing older CPPS that have not migrat
 This application uses **outdated technology** (Electron 11.5.0 and Adobe Flash Player) that **no longer receives security updates**.
 
   * The underlying Chromium version has known, unpatched vulnerabilities.
-
   * **DO NOT** use this launcher for browsing any website other than the intended CPPS URLs.
   * **DO NOT** enter sensitive information (passwords, credit cards, etc.) on any site other than the official CPPS login pages.
 
