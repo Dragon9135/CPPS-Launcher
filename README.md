@@ -2,6 +2,8 @@
 
 A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS) that require the Adobe Flash Player plugin. This application is built with a legacy version of Electron (`11.5.0`) to ensure Pepper Flash compatibility.
 
+**Note:** AI assistance was used for some functions and bug fixes.
+
 ## Features
 
   * **Multi-Server Support:** Easily switch between popular servers via the `Servers` menu:
