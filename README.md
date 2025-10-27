@@ -68,7 +68,8 @@ To build or modify the launcher:
       * Inside `plugins`, create two more folders: `x86` and `x64`.
       * Place the **32-bit** `pepflashplayer.dll` inside the `plugins/x86/` folder.
       * Place the **64-bit** `pepflashplayer.dll` inside the `plugins/x64/` folder.
-      * The final structure should be:
+
+    **The final structure should be:**
     ```
     CPPS-Launcher/
     ├── plugins/
