@@ -37,7 +37,7 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
 
 ## Usage (For End Users)
 
-1.  Download the latest installer (`CPPS.Launcher.Setup.vX.X.X.exe`) or portable (`CPPS.Launcher.vX.X.X.exe`) from the [GitHub Releases](https://github.com/Dragon9135/CPPS-Launcher/releases) page.
+1.  Download the latest installer (`CPPS-Launcher-Setup-X.X.X.exe`) or portable (`CPPS-Launcher-Portable-X.X.X.exe`) from the [GitHub Releases](https://github.com/Dragon9135/CPPS-Launcher/releases) page.
 2.  If using the installer, run it.
 3.  Launch the application.
 4.  Select a server from the "Servers" menu to begin.
@@ -50,7 +50,7 @@ To build or modify the launcher:
 
   * **Node.js v18.x:** You **must** install a version from the 18.x series (e.g., `18.20.8`). Newer Node versions will not work. [Node.js Previous Releases](https://nodejs.org/en/download/releases).
   * **Git:** For cloning the repository.
-  * **Pepper Flash Plugin:** You must obtain both the 32-bit (`ia32`) and 64-bit (`x64`) versions of `pepflashplayer.dll`.
+  * **Pepper Flash Plugin:** You must obtain both the 32-bit (`x86`) and 64-bit (`x64`) versions of `pepflashplayer.dll`.
 
 ### Building
 
