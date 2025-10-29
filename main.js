@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs'); // File System module
 const util = require('util'); // Needed to promisify legacy fs functions
 const RPC = require('discord-rpc'); // For Discord Rich Presence
+const prompt = require('electron-prompt');
 
 // === Promisify Node.js functions for async/await ===
 // Use util.promisify for fs.rmdir (Node 12/Electron 11) and fs.exists
@@ -232,7 +233,7 @@ function showAboutDialog() {
     type: 'info',
     title: 'About',
     message: `CPPS Launcher v${appVersion}`,
-    detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
+    detail: `Created by Dragon9135.\nContributed by: mAngelo-dev\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
     buttons: ['OK']
   });
 }
@@ -467,7 +468,37 @@ const menuTemplate = [
       { type: 'separator' },
       { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/'); } },
       { type: 'separator' },
-      { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } }
+      { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } },
+      { type: 'separator' },
+      {
+        label: 'Custom URL...',
+        click: async () => {
+          try {
+            const url = await prompt({
+              title: 'Enter Custom URL',
+              label: 'Server URL:',
+              value: 'https://',
+              inputAttrs: { type: 'url' },
+              type: 'input',
+              width: 400,
+              height: 180,
+              resizable: false,
+            });
+
+            if (!url) return; // User cancelled
+
+            if (/^https?:\/\/.+/.test(url)) {
+              if (view && !view.webContents.isDestroyed()) {
+                view.webContents.loadURL(url);
+              }
+            } else {
+              dialog.showErrorBox('Invalid URL', 'Please enter a valid URL starting with http:// or https://');
+            }
+          } catch (err) {
+            console.error('Custom URL prompt failed:', err);
+          }
+        }
+      }
     ]
   },
   {
@@ -475,7 +506,7 @@ const menuTemplate = [
     submenu: [
       { label: 'Reload', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.reload(); }, accelerator: 'F5' },
       { type: 'separator' },
-      { // Electron Window Fullscreen
+      {
         label: 'Toggle Fullscreen Window',
         accelerator: 'F11',
         click: () => {
@@ -485,19 +516,15 @@ const menuTemplate = [
         }
       },
       { type: 'separator' },
-      { // Experimental Fit Flash
-        label: 'Toggle Fit Flash to Window',
-        click: toggleFlashFit // Reference the function directly
-      },
+      { label: 'Toggle Fit Flash to Window', click: toggleFlashFit },
       { type: 'separator' },
-      { // Zoom Controls
+      {
         label: 'Zoom In', accelerator: 'CmdOrCtrl+=',
         click: () => {
           if (view && !view.webContents.isDestroyed()) {
-            const currentZoom = view.webContents.getZoomFactor();
-            const newZoom = Math.min(3.0, currentZoom + 0.1); // Max zoom 300%
-            view.webContents.setZoomFactor(newZoom);
-            console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
+            const z = Math.min(3.0, view.webContents.getZoomFactor() + 0.1);
+            view.webContents.setZoomFactor(z);
+            console.log(`Zoom Factor set to: ${z.toFixed(1)}`);
           }
         }
       },
@@ -505,10 +532,9 @@ const menuTemplate = [
         label: 'Zoom Out', accelerator: 'CmdOrCtrl+-',
         click: () => {
           if (view && !view.webContents.isDestroyed()) {
-            const currentZoom = view.webContents.getZoomFactor();
-            const newZoom = Math.max(0.5, currentZoom - 0.1); // Min 50%
-            view.webContents.setZoomFactor(newZoom);
-            console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
+            const z = Math.max(0.5, view.webContents.getZoomFactor() - 0.1);
+            view.webContents.setZoomFactor(z);
+            console.log(`Zoom Factor set to: ${z.toFixed(1)}`);
           }
         }
       },
@@ -517,30 +543,22 @@ const menuTemplate = [
         click: () => {
           if (view && !view.webContents.isDestroyed()) {
             view.webContents.setZoomFactor(1.0);
-            console.log(`Zoom Factor reset to: 1.0`);
+            console.log('Zoom Factor reset to 1.0');
           }
         }
       },
       { type: 'separator' },
-      {
-        label: 'Clear Data',
-        click: clearBrowsingAndFlashData // Reference the function directly
-      },
+      { label: 'Clear Data', click: clearBrowsingAndFlashData },
       { type: 'separator' },
       {
         label: 'Check for Updates',
         click: () => {
-          // Open the GitHub releases page in the user's default browser
           shell.openExternal('https://github.com/Dragon9135/CPPS-Launcher/releases/latest');
         }
       }
-      // DevTools menu added below conditionally
     ]
   },
-  {
-    label: 'About',
-    click: showAboutDialog // Reference the function directly
-  }
+  { label: 'About', click: showAboutDialog }
 ];
 
 // Add DevTools menu only if running in development mode
@@ -578,9 +596,9 @@ function createWindow() {
     }
   });
 
-  // Handle window closure gracefully
+  // Handle window closure gracefully by exiting app.
   mainWindow.on('closed', () => {
-    mainWindow = null; // Dereference window object
+    app.quit();
   });
 
   // Load the local HTML file for the main window frame
@@ -738,6 +756,13 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+// Prevent navigation redirects to file:// URLs for security - as this is a known issue with earlier versions of Electron - https://github.com/advisories/GHSA-p2jh-44qj-pf2v
+app.on('web-contents-created', (e, webContents) => {
+  webContents.on('will-redirect', (e, url) => {
+    if (/^file:/.test(url)) e.preventDefault()
+  })
+})
 
 // Initialize the app when Electron is ready
 app.whenReady().then(() => {
