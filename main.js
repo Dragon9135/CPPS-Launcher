@@ -4,7 +4,6 @@ const path = require('path');
 const fs = require('fs'); // File System module
 const util = require('util'); // Needed to promisify legacy fs functions
 const RPC = require('discord-rpc'); // For Discord Rich Presence
-const prompt = require('electron-prompt');
 
 // === Promisify Node.js functions for async/await ===
 // Use util.promisify for fs.rmdir (Node 12/Electron 11) and fs.exists
@@ -470,35 +469,7 @@ const menuTemplate = [
       { type: 'separator' },
       { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } },
       { type: 'separator' },
-      {
-        label: 'Custom URL...',
-        click: async () => {
-          try {
-            const url = await prompt({
-              title: 'Enter Custom URL',
-              label: 'Server URL:',
-              value: 'https://',
-              inputAttrs: { type: 'url' },
-              type: 'input',
-              width: 400,
-              height: 180,
-              resizable: false,
-            });
-
-            if (!url) return; // User cancelled
-
-            if (/^https?:\/\/.+/.test(url)) {
-              if (view && !view.webContents.isDestroyed()) {
-                view.webContents.loadURL(url);
-              }
-            } else {
-              dialog.showErrorBox('Invalid URL', 'Please enter a valid URL starting with http:// or https://');
-            }
-          } catch (err) {
-            console.error('Custom URL prompt failed:', err);
-          }
-        }
-      }
+      { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/'); } }
     ]
   },
   {
@@ -577,7 +548,7 @@ if (isDev) {
 }
 
 // === Create Main Window ===
-function createWindow() {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 960,
     height: 640,
@@ -602,7 +573,7 @@ function createWindow() {
   });
 
   // Load the local HTML file for the main window frame
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  await mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Create and set the native application menu
   const menu = Menu.buildFromTemplate(menuTemplate);
@@ -629,7 +600,7 @@ function createWindow() {
   });
 
   // Setup auto-resizing and initial size
-  view.setAutoResize({ width: true, height: true });
+  view.setAutoResize({width: true, height: true});
   resizeView(); // Initial size calculation
   mainWindow.on('resize', resizeView); // Recalculate size on window resize
 
@@ -655,7 +626,7 @@ function createWindow() {
       }
       return;
     }
-    
+
     // Ignore non-critical errors on sub-frames
     if (!isMainFrame) {
       console.warn(`Subframe failed to load: ${validatedURL} (Error: ${errorDescription} / ${errorCode})`);
@@ -674,20 +645,23 @@ function createWindow() {
   view.webContents.on('did-finish-load', async () => {
     try {
       if (!view || view.webContents.isDestroyed()) return;
-      
+
       const url = view.webContents.getURL();
-      
+
       // Apply cosmetic filter for newcp.net
       if (url.includes('newcp.net')) {
         await view.webContents.insertCSS(NEWCP_COSMETIC_CSS);
         console.log("Cosmetic filter applied to newcp.net.");
       }
-      
+
       // BUGFIX: Reset Fit Flash state if navigating to a new page
       if (isFlashFitted) {
         console.log("Resetting Fit Flash state due to navigation.");
         if (flashFitCSSKey) {
-          try { await view.webContents.removeInsertedCSS(flashFitCSSKey); } catch (e) { /* ignore error */ }
+          try {
+            await view.webContents.removeInsertedCSS(flashFitCSSKey);
+          } catch (e) { /* ignore error */
+          }
           flashFitCSSKey = null;
         }
         isFlashFitted = false;
@@ -701,7 +675,7 @@ function createWindow() {
   // Set a modern user agent
   view.webContents.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36');
   const initialUrl = 'https://newcp.net/en-US/'; // Changed default
-  
+
   try {
     console.log(`Loading initial URL: ${initialUrl}`);
     view.webContents.loadURL(initialUrl);
@@ -715,7 +689,7 @@ function createWindow() {
 
   // Initialize Discord RPC only for packaged app (not in dev mode)
   // if (!isDev) {
-    initDiscordRPC();
+  initDiscordRPC();
   // }
 } // End of createWindow function
 
