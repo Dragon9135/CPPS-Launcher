@@ -2,14 +2,10 @@
 const { app, BrowserWindow, BrowserView, session, Menu, dialog, systemPreferences, shell } = require('electron');
 const path = require('path');
 const fs = require('fs'); // File System module
-const util = require('util'); // Needed to promisify legacy fs functions
+const util = require('util'); // Needed for fs.exists
+const { rmdir: rmdirAsync } = require('fs').promises; // Use native promise-based rmdir
+const existsAsync = util.promisify(fs.exists); // fs.exists is callback-only
 const RPC = require('discord-rpc'); // For Discord Rich Presence
-
-// === Promisify Node.js functions for async/await ===
-// Use util.promisify for fs.rmdir (Node 12/Electron 11) and fs.exists
-const rmdirRecursiveAsync = util.promisify((dirPath, options, callback) => fs.rmdir(dirPath, options, callback));
-const existsAsync = util.promisify(fs.exists);
-
 
 // === Required Variables ===
 const isDev = !app.isPackaged; // Check if running in development or packaged app
@@ -226,7 +222,7 @@ function showAboutDialog() {
   
   const appVersion = app.getVersion();
   const electronVersion = process.versions.electron;
-  const nodeVersion = process.versions.node; // Get Node version Electron is built with
+  // const nodeVersion = process.versions.node; // Get Node version Electron is built with
 
   dialog.showMessageBox(mainWindow, {
     type: 'info',
@@ -272,8 +268,8 @@ async function clearBrowsingAndFlashData() {
   
   try {
     if (await existsAsync(flashDataPath)) {
-      // Use promisified rmdir with recursive option and retries
-      await rmdirRecursiveAsync(flashDataPath, { recursive: true, maxRetries: 3 });
+      // Use native promisified rmdir with recursive option and retries
+      await rmdirAsync(flashDataPath, { recursive: true, maxRetries: 3 });
       console.log("Flash (Pepper Data) folder cleared successfully.");
       flashDataCleared = true;
     } else {
@@ -314,9 +310,9 @@ async function clearBrowsingAndFlashData() {
   }
 
   // 4. Notify User and Reload
-  let finalTitle = '';
-  let finalMessage = '';
-  let finalDetail = '';
+  let finalTitle;
+  let finalMessage;
+  let finalDetail;
   let finalType = 'info';
 
   if (flashDataCleared && browsingDataCleared) {
@@ -468,8 +464,8 @@ const menuTemplate = [
       { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/'); } },
       { type: 'separator' },
       { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } },
-      { type: 'separator' },
-      { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/'); } }
+      { type: 'separator'},
+      { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/'); }}
     ]
   },
   {
@@ -477,7 +473,7 @@ const menuTemplate = [
     submenu: [
       { label: 'Reload', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.reload(); }, accelerator: 'F5' },
       { type: 'separator' },
-      {
+      { // Electron Window Fullscreen
         label: 'Toggle Fullscreen Window',
         accelerator: 'F11',
         click: () => {
@@ -489,7 +485,7 @@ const menuTemplate = [
       { type: 'separator' },
       { label: 'Toggle Fit Flash to Window', click: toggleFlashFit },
       { type: 'separator' },
-      {
+      { // Zoom Controls
         label: 'Zoom In', accelerator: 'CmdOrCtrl+=',
         click: () => {
           if (view && !view.webContents.isDestroyed()) {
@@ -514,7 +510,7 @@ const menuTemplate = [
         click: () => {
           if (view && !view.webContents.isDestroyed()) {
             view.webContents.setZoomFactor(1.0);
-            console.log('Zoom Factor reset to 1.0');
+            console.log(`Zoom Factor reset to: 1.0`);
           }
         }
       },
@@ -524,9 +520,11 @@ const menuTemplate = [
       {
         label: 'Check for Updates',
         click: () => {
+          // Open the GitHub releases page in the user's default browser
           shell.openExternal('https://github.com/Dragon9135/CPPS-Launcher/releases/latest');
         }
       }
+      // DevTools menu added below conditionally
     ]
   },
   { label: 'About', click: showAboutDialog }
@@ -548,7 +546,7 @@ if (isDev) {
 }
 
 // === Create Main Window ===
-async function createWindow() {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 960,
     height: 640,
@@ -573,7 +571,7 @@ async function createWindow() {
   });
 
   // Load the local HTML file for the main window frame
-  await mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Create and set the native application menu
   const menu = Menu.buildFromTemplate(menuTemplate);
@@ -648,10 +646,52 @@ async function createWindow() {
 
       const url = view.webContents.getURL();
 
-      // Apply cosmetic filter for newcp.net
+      // Apply cosmetic filter AND button replacement for newcp.net
       if (url.includes('newcp.net')) {
         await view.webContents.insertCSS(NEWCP_COSMETIC_CSS);
         console.log("Cosmetic filter applied to newcp.net.");
+
+        // === START: "Play Now!" button replacement (Internationalized) ===
+
+        // Determine button text based on URL language code
+        let playButtonText = 'Play Now!'; // Default English
+        if (url.includes('/pt-BR/')) {
+          playButtonText = 'Jogar!';
+        } else if (url.includes('/es-LA/')) {
+          playButtonText = '¡Jugar!';
+        }
+
+        const replaceButtonScript = `
+          (function() {
+            try {
+              // Find the target "Download App" link.
+              const downloadLink = document.querySelector('a.nav-link[href="/download"]');
+              
+              if (downloadLink) {
+                // This text is passed in from the main.js process
+                const newText = '${playButtonText}'; 
+
+                // Define the new "Play Now!" button HTML
+                const newPlayButtonHTML = \`
+                  <a href="/plays?force=true#/login" data-rr-ui-event-key="/plays?force=true#/login" class="nav-link">
+                    <button type="submit" id="Navbar_download-btn__6D0hQ" class="btn btn-danger">
+                      <div id="Navbar_download-text__FSfPd" style="border: none; position: unset;">\${newText}</div>
+                    </button>
+                  </a>\`;
+                
+                // Replace the "Download" link's outer HTML with the new "Play" link HTML
+                downloadLink.outerHTML = newPlayButtonHTML;
+                console.log('CPPS Launcher: Replaced "Download" button with "' + newText + '" button.');
+              } else {
+                console.log('CPPS Launcher: "Download" button (a.nav-link[href="/download"]) not found, no replacement made.');
+              }
+            } catch (e) {
+              console.error('CPPS Launcher: Error replacing button:', e);
+            }
+          })();
+        `;
+        await view.webContents.executeJavaScript(replaceButtonScript);
+        // === END: "Play Now!" button replacement ===
       }
 
       // BUGFIX: Reset Fit Flash state if navigating to a new page
@@ -686,11 +726,9 @@ async function createWindow() {
     }
   }
 
-
-  // Initialize Discord RPC only for packaged app (not in dev mode)
-  // if (!isDev) {
+  // Initialize Discord RPC
   initDiscordRPC();
-  // }
+
 } // End of createWindow function
 
 
