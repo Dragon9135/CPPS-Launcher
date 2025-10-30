@@ -2,14 +2,10 @@
 const { app, BrowserWindow, BrowserView, session, Menu, dialog, systemPreferences, shell } = require('electron');
 const path = require('path');
 const fs = require('fs'); // File System module
-const util = require('util'); // Needed to promisify legacy fs functions
+const util = require('util'); // Needed for fs.exists
+const { rmdir: rmdirAsync } = require('fs').promises; // Use native promise-based rmdir
+const existsAsync = util.promisify(fs.exists); // fs.exists is callback-only
 const RPC = require('discord-rpc'); // For Discord Rich Presence
-
-// === Promisify Node.js functions for async/await ===
-// Use util.promisify for fs.rmdir (Node 12/Electron 11) and fs.exists
-const rmdirRecursiveAsync = util.promisify((dirPath, options, callback) => fs.rmdir(dirPath, options, callback));
-const existsAsync = util.promisify(fs.exists);
-
 
 // === Required Variables ===
 const isDev = !app.isPackaged; // Check if running in development or packaged app
@@ -272,8 +268,8 @@ async function clearBrowsingAndFlashData() {
   
   try {
     if (await existsAsync(flashDataPath)) {
-      // Use promisified rmdir with recursive option and retries
-      await rmdirRecursiveAsync(flashDataPath, { recursive: true, maxRetries: 3 });
+      // Use native promisified rmdir with recursive option and retries
+      await rmdirAsync(flashDataPath, { recursive: true, maxRetries: 3 });
       console.log("Flash (Pepper Data) folder cleared successfully.");
       flashDataCleared = true;
     } else {
@@ -659,10 +655,52 @@ function createWindow() {
       
       const url = view.webContents.getURL();
       
-      // Apply cosmetic filter for newcp.net
+      // Apply cosmetic filter AND button replacement for newcp.net
       if (url.includes('newcp.net')) {
         await view.webContents.insertCSS(NEWCP_COSMETIC_CSS);
         console.log("Cosmetic filter applied to newcp.net.");
+        
+        // === START: "Play Now!" button replacement (Internationalized) ===
+        
+        // Determine button text based on URL language code
+        let playButtonText = 'Play Now!'; // Default English
+        if (url.includes('/pt-BR/')) {
+          playButtonText = 'Jogar!';
+        } else if (url.includes('/es-LA/')) {
+          playButtonText = '¡Jugar!';
+        }
+
+        const replaceButtonScript = `
+          (function() {
+            try {
+              // Find the target "Download App" link.
+              const downloadLink = document.querySelector('a.nav-link[href="/download"]');
+              
+              if (downloadLink) {
+                // This text is passed in from the main.js process
+                const newText = '${playButtonText}'; 
+
+                // Define the new "Play Now!" button HTML
+                const newPlayButtonHTML = \`
+                  <a href="/plays?force=true#/login" data-rr-ui-event-key="/plays?force=true#/login" class="nav-link">
+                    <button type="submit" id="Navbar_download-btn__6D0hQ" class="btn btn-danger">
+                      <div id="Navbar_download-text__FSfPd" style="border: none; position: unset;">\${newText}</div>
+                    </button>
+                  </a>\`;
+                
+                // Replace the "Download" link's outer HTML with the new "Play" link HTML
+                downloadLink.outerHTML = newPlayButtonHTML;
+                console.log('CPPS Launcher: Replaced "Download" button with "' + newText + '" button.');
+              } else {
+                console.log('CPPS Launcher: "Download" button (a.nav-link[href="/download"]) not found, no replacement made.');
+              }
+            } catch (e) {
+              console.error('CPPS Launcher: Error replacing button:', e);
+            }
+          })();
+        `;
+        await view.webContents.executeJavaScript(replaceButtonScript);
+        // === END: "Play Now!" button replacement ===
       }
       
       // BUGFIX: Reset Fit Flash state if navigating to a new page
@@ -694,11 +732,9 @@ function createWindow() {
     }
   }
 
+  // Initialize Discord RPC
+  initDiscordRPC();
 
-  // Initialize Discord RPC only for packaged app (not in dev mode)
-  // if (!isDev) {
-    initDiscordRPC();
-  // }
 } // End of createWindow function
 
 
