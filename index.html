@@ -3,30 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <title>CPPS Launcher</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self';">
+  
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+  
   <style>
-    /* Just a black background for the BrowserView to sit on top of */
+    /* This is the black background that hosts the BrowserView.
+      It fills the entire window and hides any overflow.
+    */
     body, html { 
-      margin:0; 
-      padding:0; 
-      height:100%; 
-      width:100%; 
-      background:#000; 
-      overflow:hidden; 
+      margin: 0; 
+      padding: 0; 
+      height: 100%; 
+      width: 100%; 
+      background: #000; 
+      overflow: hidden; 
     }
   </style>
 </head>
 <body>
   <script>
-    // === ALL MENU AND MODAL JS REMOVED ===
-    
-    // Only error listeners from main.js remain
-    window.electronAPI.onViewCrashed(() => {
+    // --- Optimized Renderer Script ---
+
+    // Keep references to the listener cleanup functions returned from the preload script.
+    const cleanupCrashListener = window.electronAPI.onViewCrashed(() => {
       alert('The game window has crashed. Please try reloading with F5 (Options -> Reload).');
     });
-    window.electronAPI.onViewLoadFailed((data) => {
+
+    const cleanupLoadFailListener = window.electronAPI.onViewLoadFailed((data) => {
       console.error('View failed to load', data);
       alert(`Page failed to load: ${data.desc} (Error ${data.code})`);
+    });
+
+    // Add an event listener to clean up the IPC listeners when the window is closed.
+    // This prevents potential memory leaks.
+    window.addEventListener('beforeunload', () => {
+      console.log('Cleaning up renderer listeners...');
+      if (cleanupCrashListener) {
+        cleanupCrashListener();
+      }
+      if (cleanupLoadFailListener) {
+        cleanupLoadFailListener();
+      }
     });
   </script>
 </body>
