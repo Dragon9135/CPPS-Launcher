@@ -315,9 +315,9 @@ async function clearBrowsingAndFlashData() {
   }
 
   // 4. Notify User and Reload
-  let finalTitle = '';
-  let finalMessage = '';
-  let finalDetail = '';
+  let finalTitle;
+  let finalMessage;
+  let finalDetay;
   let finalType = 'info';
 
   if (flashDataCleared && browsingDataCleared) {
@@ -817,4 +817,5 @@ process.on('uncaughtException', (error, origin) => {
   // In production, it might be safer to exit after logging
   // if (!isDev) { process.exit(1); }
 });
+
 
