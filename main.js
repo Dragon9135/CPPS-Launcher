@@ -468,7 +468,9 @@ const menuTemplate = [
       { type: 'separator' },
       { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/'); } },
       { type: 'separator' },
-      { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } }
+      { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } },
+      { type: 'separator' },
+      { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login'); } }
     ]
   },
   {
@@ -817,6 +819,7 @@ process.on('uncaughtException', (error, origin) => {
   // In production, it might be safer to exit after logging
   // if (!isDev) { process.exit(1); }
 });
+
 
 
 
