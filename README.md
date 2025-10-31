@@ -13,6 +13,7 @@ A lightweight, optimized desktop launcher for Club Penguin Private Servers (CPPS
       * Antique Penguin
       * Club Penguin Zero
       * Original Penguin
+      * Club Penguin Dimensions
 
   * **Flash Plugin Verification:** Automatically checks on startup if the required `pepflashplayer.dll` files are present. If not, it provides a detailed error message explaining the exact paths needed.
   * **Clear Browsing & Flash Data:** A simple menu option (`Options` \> `Clear Data`) to clear all cache, cookies, and Flash Player data (LSOs), which can resolve common login or loading issues.
