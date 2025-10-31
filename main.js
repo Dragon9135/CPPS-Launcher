@@ -1,10 +1,8 @@
 // main.js (Electron 11.5.0 - Final Optimized Version)
 const { app, BrowserWindow, BrowserView, session, Menu, dialog, systemPreferences, shell } = require('electron');
 const path = require('path');
-const fs = require('fs'); // File System module
-const util = require('util'); // Needed for fs.exists
-const { rmdir: rmdirAsync } = require('fs').promises; // Use native promise-based rmdir
-const existsAsync = util.promisify(fs.exists); // fs.exists is callback-only
+const fs = require('fs'); // File System module (for sync checks)
+const fsPromises = require('fs').promises; // File System Promises module
 const RPC = require('discord-rpc'); // For Discord Rich Presence
 
 // === Required Variables ===
@@ -227,7 +225,7 @@ function showAboutDialog() {
   
   const appVersion = app.getVersion();
   const electronVersion = process.versions.electron;
-  // const nodeVersion = process.versions.node; // Get Node version Electron is built with
+  // const nodeVersion = process.versions.node;
 
   dialog.showMessageBox(mainWindow, {
     type: 'info',
@@ -272,18 +270,20 @@ async function clearBrowsingAndFlashData() {
   console.log(`Attempting to clear Flash data in: ${flashDataPath}`);
   
   try {
-    if (await existsAsync(flashDataPath)) {
-      // Use native promisified rmdir with recursive option and retries
-      await rmdirAsync(flashDataPath, { recursive: true, maxRetries: 3 });
-      console.log("Flash (Pepper Data) folder cleared successfully.");
-      flashDataCleared = true;
-    } else {
+    // fs.promises.stat() will throw if path doesn't exist.
+    await fsPromises.stat(flashDataPath); 
+    // Use rmdir (from fsPromises) as it's correct for Node 12 (Electron 11)
+    await fsPromises.rmdir(flashDataPath, { recursive: true, maxRetries: 3 });
+    console.log("Flash (Pepper Data) folder cleared successfully.");
+    flashDataCleared = true;
+  } catch (err) {
+    if (err.code === 'ENOENT') { // ENOENT = Error NO ENTry (File not found)
       console.log("Flash (Pepper Data) folder not found, skipping deletion.");
       flashDataCleared = true; // No folder means it's "clear"
+    } else {
+      console.error("Error clearing Flash (Pepper Data) folder:", err);
+      flashError = err;
     }
-  } catch (err) {
-    console.error("Error clearing Flash (Pepper Data) folder:", err);
-    flashError = err;
   }
 
   // 3. Clear Electron Browsing Data Asynchronously (if view exists)
@@ -317,7 +317,7 @@ async function clearBrowsingAndFlashData() {
   // 4. Notify User and Reload
   let finalTitle;
   let finalMessage;
-  let finalDetay;
+  let finalDetail; // <-- FIX: Renamed from 'finalDetay' to 'finalDetail'
   let finalType = 'info';
 
   if (flashDataCleared && browsingDataCleared) {
@@ -583,7 +583,7 @@ function createWindow() {
 
   // Handle window closure gracefully
   mainWindow.on('closed', () => {
-    app.quit(); // Dereference window object
+    app.quit(); // Quit the app when the main window is closed
   });
 
   // Load the local HTML file for the main window frame
