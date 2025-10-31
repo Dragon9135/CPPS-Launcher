@@ -117,22 +117,27 @@ function initDiscordRPC() {
 // === END OF DISCORD CODE ===
 
 // === Performance & Flash Flags ===
-// Apply various command line switches for performance and compatibility
-// These must be set *before* the app 'ready' event
+app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
+app.commandLine.appendSwitch('ppapi-flash-version', '34.0.0.330');
+app.commandLine.appendSwitch('allow-outdated-plugins');
+app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 app.commandLine.appendSwitch('high-dpi-support', '1');
+app.commandLine.appendSwitch('ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
+app.commandLine.appendSwitch('enable-accelerated-video-decode');
 app.commandLine.appendSwitch('disable-background-networking');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-extensions');
-app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
-app.commandLine.appendSwitch('ppapi-flash-version', '34.0.0.330'); // Example version
-app.commandLine.appendSwitch('allow-outdated-plugins');
-app.commandLine.appendSwitch('ignore-certificate-errors');
-
+app.commandLine.appendSwitch('disable-component-update');
+app.commandLine.appendSwitch('disable-domain-reliability');
+app.commandLine.appendSwitch('disable-client-side-phishing-detection');
+app.commandLine.appendSwitch('disable-breakpad');
+app.commandLine.appendSwitch('disable-audio-input');
+app.commandLine.appendSwitch('disable-features', 'MediaRouter');
 
 // === Ad/Tracker Block List ===
 const BLOCK_LIST = [
@@ -222,7 +227,7 @@ function showAboutDialog() {
   
   const appVersion = app.getVersion();
   const electronVersion = process.versions.electron;
-  const nodeVersion = process.versions.node; // Get Node version Electron is built with
+  // const nodeVersion = process.versions.node; // Get Node version Electron is built with
 
   dialog.showMessageBox(mainWindow, {
     type: 'info',
@@ -812,3 +817,4 @@ process.on('uncaughtException', (error, origin) => {
   // In production, it might be safer to exit after logging
   // if (!isDev) { process.exit(1); }
 });
+
