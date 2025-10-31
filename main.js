@@ -581,7 +581,7 @@ function createWindow() {
 
   // Handle window closure gracefully
   mainWindow.on('closed', () => {
-    mainWindow = null; // Dereference window object
+    app.quit(); // Dereference window object
   });
 
   // Load the local HTML file for the main window frame
@@ -817,5 +817,6 @@ process.on('uncaughtException', (error, origin) => {
   // In production, it might be safer to exit after logging
   // if (!isDev) { process.exit(1); }
 });
+
 
 
