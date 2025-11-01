@@ -126,6 +126,13 @@ app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
 app.commandLine.appendSwitch('enable-accelerated-video-decode');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('enable-oop-rasterization');
+app.commandLine.appendSwitch('enable-threaded-compositing');
+app.commandLine.appendSwitch('enable-smooth-scrolling');
+app.commandLine.appendSwitch('use-angle', 'd3d11');
+app.commandLine.appendSwitch('process-per-site');
+app.commandLine.appendSwitch('enable-parallel-downloading');
 app.commandLine.appendSwitch('disable-background-networking');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
@@ -819,3 +826,4 @@ process.on('uncaughtException', (error, origin) => {
   // In production, it might be safer to exit after logging
   // if (!isDev) { process.exit(1); }
 });
+
