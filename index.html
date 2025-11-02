@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>CPPS Launcher</title>
-  
+
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
-  
+
   <style>
-    /* This is the black background that hosts the BrowserView.
-      It fills the entire window and hides any overflow.
-    */
+
     body, html { 
       margin: 0; 
       padding: 0; 
@@ -22,9 +20,7 @@
 </head>
 <body>
   <script>
-    // --- Optimized Renderer Script ---
 
-    // Keep references to the listener cleanup functions returned from the preload script.
     const cleanupCrashListener = window.electronAPI.onViewCrashed(() => {
       alert('The game window has crashed. Please try reloading with F5 (Options -> Reload).');
     });
@@ -34,8 +30,6 @@
       alert(`Page failed to load: ${data.desc} (Error ${data.code})`);
     });
 
-    // Add an event listener to clean up the IPC listeners when the window is closed.
-    // This prevents potential memory leaks.
     window.addEventListener('beforeunload', () => {
       console.log('Cleaning up renderer listeners...');
       if (cleanupCrashListener) {
