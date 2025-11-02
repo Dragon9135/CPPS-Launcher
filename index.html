@@ -1,44 +1,39 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>CPPS Launcher</title>
-
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
-
-  <style>
-
-    body, html { 
-      margin: 0; 
-      padding: 0; 
-      height: 100%; 
-      width: 100%; 
-      background: #000; 
-      overflow: hidden; 
-    }
-  </style>
-</head>
-<body>
-  <script>
-
-    const cleanupCrashListener = window.electronAPI.onViewCrashed(() => {
-      alert('The game window has crashed. Please try reloading with F5 (Options -> Reload).');
-    });
-
-    const cleanupLoadFailListener = window.electronAPI.onViewLoadFailed((data) => {
-      console.error('View failed to load', data);
-      alert(`Page failed to load: ${data.desc} (Error ${data.code})`);
-    });
-
-    window.addEventListener('beforeunload', () => {
-      console.log('Cleaning up renderer listeners...');
-      if (cleanupCrashListener) {
-        cleanupCrashListener();
+  <head>
+    <meta charset="UTF-8">
+    <title>CPPS Launcher</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        background: #000;
+        overflow: hidden;
       }
-      if (cleanupLoadFailListener) {
-        cleanupLoadFailListener();
-      }
-    });
-  </script>
-</body>
+    </style>
+  </head>
+  <body>
+    <script>
+      const cleanupCrashListener = window.electronAPI.onViewCrashed(() => {
+        alert('The game window has crashed. Please try reloading with F5 (Options -> Reload).');
+      });
+      const cleanupLoadFailListener = window.electronAPI.onViewLoadFailed((data) => {
+        console.error('View failed to load', data);
+        alert(`Page failed to load: ${data.desc} (Error ${data.code})`);
+      });
+      window.addEventListener('beforeunload', () => {
+        console.log('Cleaning up renderer listeners...');
+        if (cleanupCrashListener) {
+          cleanupCrashListener();
+        }
+        if (cleanupLoadFailListener) {
+          cleanupLoadFailListener();
+        }
+      });
+    </script>
+  </body>
 </html>
