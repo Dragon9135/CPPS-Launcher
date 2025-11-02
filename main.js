@@ -9,10 +9,8 @@ const {
     shell
 } = require('electron');
 const path = require('path');
-const {
-    promises: fsPromises,
-    existsSync
-} = require('fs');
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const RPC = require('discord-rpc');
 
 const isDev = !app.isPackaged;
@@ -21,6 +19,7 @@ const topMenuHeight = 0;
 
 const arch = process.arch === 'ia32' ? 'x86' : 'x64';
 const pluginName = 'pepflashplayer.dll';
+
 const pluginPath = path.join(resourcesPath, 'plugins', arch, pluginName);
 
 let mainWindow = null;
@@ -36,6 +35,7 @@ let rpcReady = false;
 let rpcInterval = null;
 
 async function setDiscordActivity() {
+
     if (!rpc || !rpcReady) {
         return;
     }
@@ -49,6 +49,7 @@ async function setDiscordActivity() {
             largeImageText: 'CPPS Launcher',
             instance: false,
         });
+
     } catch (err) {
         console.error("Failed to set Discord activity:", err);
 
@@ -68,6 +69,7 @@ async function setDiscordActivity() {
 function initDiscordRPC() {
 
     if (rpcReady || (rpc.transport && rpc.transport.socket && rpc.transport.socket.readyState === 'open')) {
+
         return;
     }
 
@@ -181,11 +183,6 @@ const BLOCK_LIST = [
     'dynamicadx.com', 'clickaine.com', 'adkernel.com', 'clickadu.com', 'hilltopads.net',
     'onclkds.com', 'shorte.st', 'exoclick.com', 'redirectvoluum.com', 'trk',
     'affec.tv', 'affiliatly.com', 'tradedoubler.com',
-    'adobe.com', 'marketing.adobe.com', 'assets.adobe.com', 'experiencecloud.adobe.com',
-    'experience.adobe.com', 'adobe-marketing-cloud.com', 'adobedc.com', 'adobedc.net',
-    'adobeid.com', 'adobelogin.com', 'ims-na1.adobelogin.com', 'ims-eu1.adobelogin.com',
-    'adobe-analytics.com', 'metrics.adobe.com', 'adobemarketingcloud.com',
-    '2o7.net', 'sc.omtrdc.net', 'adobedc.services', 'adobe-fonts.net',
     'adtago.s3.amazonaws.com', 'analyticsengine.s3.amazonaws.com',
     'analytics.s3.amazonaws.com', 'advice-ads.s3.amazonaws.com',
     'pagead2.googlesyndication.com', 'adservice.google.com',
@@ -258,10 +255,10 @@ function setupSessionInterceptors(sess) {
             if (relevantTypes.includes(details.resourceType)) {
                 for (const key of Object.keys(headers)) {
                     const lowerKey = key.toLowerCase();
-
                     if (lowerKey === 'x-frame-options') {
                         delete headers[key];
                     } else if (lowerKey === 'content-security-policy') {
+
                         const originalValue = Array.isArray(headers[key]) ? headers[key][0] : headers[key];
                         headers[key] = [(originalValue || '').split(';').filter(d => !d.trim().startsWith('frame-ancestors')).join(';')];
                     }
@@ -287,6 +284,7 @@ function setupSessionInterceptors(sess) {
 }
 
 function resizeView() {
+
     if (!mainWindow || mainWindow.isDestroyed() || !view || view.webContents.isDestroyed()) {
         return;
     }
@@ -314,7 +312,7 @@ function showAboutDialog() {
         type: 'info',
         title: 'About',
         message: `CPPS Launcher v${appVersion}`,
-        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nFlash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
+        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
         buttons: ['OK']
     });
 }
@@ -347,6 +345,7 @@ async function clearBrowsingAndFlashData() {
     console.log(`Attempting to clear Flash data in: ${flashDataPath}`);
 
     try {
+
         await fsPromises.stat(flashDataPath);
 
         await fsPromises.rmdir(flashDataPath, {
@@ -473,8 +472,10 @@ async function toggleFlashFit() {
     try {
 
         if (isFlashFitted) {
+
             flashFitCSSKey = await view.webContents.insertCSS(HIDE_SCROLLBAR_CSS);
         } else if (flashFitCSSKey) {
+
             if (view && !view.webContents.isDestroyed()) {
                 await view.webContents.removeInsertedCSS(flashFitCSSKey);
             }
@@ -515,144 +516,159 @@ async function toggleFlashFit() {
 }
 
 const menuTemplate = [{
-    label: 'Servers',
-    submenu: [{
-        label: 'New Club Penguin',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.newcp.net/');
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'CPPS.to',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/');
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Antique Penguin',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/');
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Club Penguin Zero',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/');
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Original Penguin',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/');
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Club Penguin Dimensions',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login');
-        }
-    }]
-}, {
-    label: 'Options',
-    submenu: [{
-        label: 'Reload',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.reload();
-        },
-        accelerator: 'F5'
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Toggle Fullscreen Window',
-        accelerator: 'F11',
-        click: () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.setFullScreen(!mainWindow.isFullScreen());
-            }
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Toggle Fit Flash to Window',
-        click: toggleFlashFit
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Flash Player General Settings',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager02.html');
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Zoom In',
-        accelerator: 'CmdOrCtrl+=',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) {
-                const currentZoom = view.webContents.getZoomFactor();
-                const newZoom = Math.min(3.0, currentZoom + 0.1);
-                view.webContents.setZoomFactor(newZoom);
-                console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
-            }
-        }
-    }, {
-        label: 'Zoom Out',
-        accelerator: 'CmdOrCtrl+-',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) {
-                const currentZoom = view.webContents.getZoomFactor();
-                const newZoom = Math.max(0.5, currentZoom - 0.1);
-                view.webContents.setZoomFactor(newZoom);
-                console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
-            }
-        }
-    }, {
-        label: 'Reset Zoom',
-        accelerator: 'CmdOrCtrl+0',
-        click: () => {
-            if (view && !view.webContents.isDestroyed()) {
-                view.webContents.setZoomFactor(1.0);
-                console.log(`Zoom Factor reset to: 1.0`);
-            }
-        }
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Clear Data',
-        click: clearBrowsingAndFlashData
-    }, {
-        type: 'separator'
-    }, {
-        label: 'Check for Updates',
-        click: () => {
-
-            shell.openExternal('https://github.com/Dragon9135/CPPS-Launcher/releases/latest');
-        }
-    }]
-}, {
-    label: 'About',
-    click: showAboutDialog
-}];
-
-if (isDev) {
-    const optionsSubmenu = menuTemplate.find(item => item.label === 'Options') ? .submenu;
-    if (optionsSubmenu) {
-        optionsSubmenu.push({
-            type: 'separator'
-        }, {
-            label: 'Toggle Developer Tools',
-            click: () => {
-                if (view && !view.webContents.isDestroyed()) view.webContents.toggleDevTools();
+        label: 'Servers',
+        submenu: [{
+                label: 'New Club Penguin',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.newcp.net/');
+                }
             },
-            accelerator: 'Ctrl+Shift+I'
-        });
+            {
+                type: 'separator'
+            },
+            {
+                label: 'CPPS.to',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/');
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Antique Penguin',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/');
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Club Penguin Zero',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/');
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Original Penguin',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/');
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Club Penguin Dimensions',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login');
+                }
+            }
+        ]
+    },
+    {
+        label: 'Options',
+        submenu: [{
+                label: 'Reload',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.reload();
+                },
+                accelerator: 'F5'
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Toggle Fullscreen Window',
+                accelerator: 'F11',
+                click: () => {
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        mainWindow.setFullScreen(!mainWindow.isFullScreen());
+                    }
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Toggle Fit Flash to Window',
+                click: toggleFlashFit
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Flash Player General Settings',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager02.html');
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Zoom In',
+                accelerator: 'CmdOrCtrl+=',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) {
+                        const currentZoom = view.webContents.getZoomFactor();
+                        const newZoom = Math.min(3.0, currentZoom + 0.1);
+                        view.webContents.setZoomFactor(newZoom);
+                        console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
+                    }
+                }
+            },
+            {
+                label: 'Zoom Out',
+                accelerator: 'CmdOrCtrl+-',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) {
+                        const currentZoom = view.webContents.getZoomFactor();
+                        const newZoom = Math.max(0.5, currentZoom - 0.1);
+                        view.webContents.setZoomFactor(newZoom);
+                        console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
+                    }
+                }
+            },
+            {
+                label: 'Reset Zoom',
+                accelerator: 'CmdOrCtrl+0',
+                click: () => {
+                    if (view && !view.webContents.isDestroyed()) {
+                        view.webContents.setZoomFactor(1.0);
+                        console.log(`Zoom Factor reset to: 1.0`);
+                    }
+                }
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Clear Data',
+                click: clearBrowsingAndFlashData
+            },
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Check for Updates',
+                click: () => {
+
+                    shell.openExternal('https://github.com/Dragon9135/CPPS-Launcher/releases/latest');
+                }
+            }
+
+        ]
+    },
+    {
+        label: 'About',
+        click: showAboutDialog
     }
-}
+];
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -674,7 +690,7 @@ function createWindow() {
     });
 
     mainWindow.on('closed', () => {
-        mainWindow = null;
+        app.quit();
     });
 
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
@@ -688,7 +704,7 @@ function createWindow() {
             contextIsolation: true,
             plugins: true,
             sandbox: false,
-            devTools: isDev
+            devTools: false
         }
     });
     mainWindow.setBrowserView(view);
@@ -773,6 +789,7 @@ function createWindow() {
         if (mainWindow && !mainWindow.isDestroyed()) {
             dialog.showErrorBox("Error", "The game view process has crashed. Please try reloading (Options > Reload) or restarting the application.");
         }
+
     });
 
     view.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
@@ -812,8 +829,8 @@ function createWindow() {
     });
 
     view.webContents.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36');
-
     const initialUrl = 'https://newcp.net/en-US/';
+
     try {
         console.log(`Loading initial URL: ${initialUrl}`);
         view.webContents.loadURL(initialUrl);
@@ -825,6 +842,7 @@ function createWindow() {
     }
 
     initDiscordRPC();
+
 }
 
 try {
@@ -859,7 +877,7 @@ app.on('activate', () => {
 
 app.whenReady().then(() => {
 
-    if (!existsSync(pluginPath)) {
+    if (!fs.existsSync(pluginPath)) {
         console.error(`Flash plugin not found at expected path: ${pluginPath}`);
         dialog.showErrorBox("Flash Plugin Error", `Flash plugin (pepflashplayer.dll) not found.\n\nArchitecture: ${arch}\nExpected location:\n${pluginPath}\n\nPlease ensure the plugin is placed correctly in the 'plugins/${arch}' folder next to the application executable.`);
 
@@ -874,6 +892,7 @@ app.whenReady().then(() => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+
     if (!isDev && mainWindow && !mainWindow.isDestroyed()) {
         dialog.showErrorBox('Unhandled Error', `An unexpected error occurred (Promise Rejection).\nPlease report this issue.\nDetails: ${reason}`);
     }
@@ -881,7 +900,9 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error, origin) => {
     console.error(`Caught exception: ${error}\nException origin: ${origin}`);
+
     if (app.isReady() && mainWindow && !mainWindow.isDestroyed()) {
         dialog.showErrorBox('Unhandled Error', `A critical error occurred: ${error.message}\nOrigin: ${origin}\n\nPlease report this issue.\n${error.stack}`);
     }
+
 });
