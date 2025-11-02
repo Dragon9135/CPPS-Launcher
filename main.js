@@ -115,39 +115,80 @@ function initDiscordRPC() {
 // === END OF DISCORD CODE ===
 
 // === Performance & Flash Flags ===
+app.commandLine.appendSwitch('disable-features', [
+  'MediaRouter',
+  'CalculateNativeWinOcclusion',
+  'OptimizationGuideModelDownloading',
+  'InterestFeedContentSuggestions',
+  'InterestFeedSparePrefetch',
+  'GlobalMediaControls',
+  'TabHoverCards',
+  'TabHoverCardImages',
+  'UseEcoQoSForBackgroundProcess',
+  'CanvasOOPRasterization',
+  'SurfaceControl',
+  'DirectManipulationStylus'
+].join(','));
+
 app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
 app.commandLine.appendSwitch('ppapi-flash-version', '34.0.0.330');
 app.commandLine.appendSwitch('allow-outdated-plugins');
-app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
-app.commandLine.appendSwitch('high-dpi-support', '0');
+app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('ignore-certificate-errors');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-oop-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
 app.commandLine.appendSwitch('enable-accelerated-video-decode');
-app.commandLine.appendSwitch('enable-zero-copy');
-app.commandLine.appendSwitch('enable-oop-rasterization');
 app.commandLine.appendSwitch('enable-threaded-compositing');
+app.commandLine.appendSwitch('disable-gpu-vsync');
+app.commandLine.appendSwitch('disable-smooth-scrolling');
+app.commandLine.appendSwitch('disable-distance-field-text');
+app.commandLine.appendSwitch('disable-lcd-text');
+app.commandLine.appendSwitch('disable-font-subpixel-positioning');
 app.commandLine.appendSwitch('disable-background-networking');
-app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-breakpad');
+app.commandLine.appendSwitch('disable-print-preview');
+app.commandLine.appendSwitch('disable-client-side-phishing-detection');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-sync');
 app.commandLine.appendSwitch('disable-extensions');
 app.commandLine.appendSwitch('disable-component-update');
-app.commandLine.appendSwitch('disable-domain-reliability');
-app.commandLine.appendSwitch('disable-client-side-phishing-detection');
-app.commandLine.appendSwitch('disable-breakpad');
+app.commandLine.appendSwitch('disable-webrtc');
+app.commandLine.appendSwitch('disable-speech-api');
 app.commandLine.appendSwitch('disable-audio-input');
-app.commandLine.appendSwitch('disable-features', 'MediaRouter');
+app.commandLine.appendSwitch('disable-video-capture');
+app.commandLine.appendSwitch('no-pings');
+app.commandLine.appendSwitch('process-per-site');
+app.commandLine.appendSwitch('renderer-process-limit', '3');
+app.commandLine.appendSwitch('dom-storage-enabled', 'true');
 
 // === Ad/Tracker Block List ===
 const BLOCK_LIST = [
-  'googlesyndication.com', 'googleadservices.com', 'doubleclick.net',
-  'ads.pubmatic.com', 'adnxs.com', 'rubiconproject.com', 'openx.net', 'criteo.com',
-  'taboola.com', 'outbrain.com', 'amazon-adsystem.com', 'adsrvr.org', 'bidswitch.net',
-  'popads.net', 'propellerads.com', 'adsterra.com', 'google-analytics.com',
-  'analytics.google.com', 'googletagmanager.com', 'facebook.net', 'connect.facebook.net',
-  'scorecardresearch.com', 'quantserve.com', 'adobedtm.com', 'hotjar.com', 'moatads.com'
+  '*.googlesyndication.com', '*.googleadservices.com', '*.doubleclick.net',
+  '*.ads.pubmatic.com', '*.adnxs.com', '*.rubiconproject.com', '*.openx.net', '*.criteo.com',
+  '*.taboola.com', '*.outbrain.com', '*.amazon-adsystem.com', '*.adsrvr.org', '*.bidswitch.net',
+  '*.popads.net', '*.propellerads.com', '*.adsterra.com', '*.google-analytics.com',
+  '*.analytics.google.com', '*.googletagmanager.com', '*.facebook.net', '*.connect.facebook.net',
+  '*.scorecardresearch.com', '*.quantserve.com', '*.adobedtm.com', '*.hotjar.com', '*.moatads.com',
+  '*.serving-sys.com', '*.advertising.com', '*.adform.net', '*.adroll.com', '*.yieldmo.com',
+  '*.contextweb.com', '*.revcontent.com', '*.skimresources.com', '*.mookie1.com',
+  '*.fingerprintjs.com', '*.privacy-center.org', '*.fingerprint.com', '*.fingerprintjs.io',
+  '*.sessioncam.com', '*.smartlook.com', '*.contentsquare.net', '*.usercentrics.eu',
+  '*.intercom.io', '*.intercomcdn.com', '*.clarity.ms', '*.mouseflow.com', '*.fullstory.com',
+  '*.twitter.com', '*.t.co', '*.static.ads-twitter.com', '*.analytics.twitter.com',
+  '*.snapads.com', '*.tiktokads.com', '*.business.tiktok.com',
+  '*.omtrdc.net', '*.demdex.net', '*.adobedc.net', '*.everesttech.net',
+  '*.stats.wp.com', '*.mixpanel.com', '*.amplitude.com', '*.logrocket.com', '*.segment.io',
+  '*.datadoghq.com', '*.newrelic.com', '*.nr-data.net', '*.bugsnag.com',
+  '*.yandexadexchange.net', '*.realsrv.com', '*.inmobi.com', '*.trafmag.com', '*.exdynsrv.com',
+  '*.dynamicadx.com', '*.clickaine.com', '*.adkernel.com', '*.clickadu.com', '*.hilltopads.net',
+  '*.onclkds.com', '*.shorte.st', '*.exoclick.com', '*.redirectvoluum.com', '*trk*',
+  '*.affec.tv', '*.affiliatly.com', '*.tradedoubler.com'
 ];
 
 // === Cosmetic Filter (for newcp.net) ===
@@ -822,5 +863,6 @@ process.on('uncaughtException', (error, origin) => {
   // In production, it might be safer to exit after logging
   // if (!isDev) { process.exit(1); }
 });
+
 
 
