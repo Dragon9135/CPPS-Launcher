@@ -9,8 +9,10 @@ const {
     shell
 } = require('electron');
 const path = require('path');
-const fs = require('fs');
-const fsPromises = require('fs').promises;
+const {
+    promises: fsPromises,
+    existsSync
+} = require('fs');
 const RPC = require('discord-rpc');
 
 const isDev = !app.isPackaged;
@@ -19,7 +21,6 @@ const topMenuHeight = 0;
 
 const arch = process.arch === 'ia32' ? 'x86' : 'x64';
 const pluginName = 'pepflashplayer.dll';
-
 const pluginPath = path.join(resourcesPath, 'plugins', arch, pluginName);
 
 let mainWindow = null;
@@ -35,7 +36,6 @@ let rpcReady = false;
 let rpcInterval = null;
 
 async function setDiscordActivity() {
-
     if (!rpc || !rpcReady) {
         return;
     }
@@ -49,7 +49,6 @@ async function setDiscordActivity() {
             largeImageText: 'CPPS Launcher',
             instance: false,
         });
-
     } catch (err) {
         console.error("Failed to set Discord activity:", err);
 
@@ -69,7 +68,6 @@ async function setDiscordActivity() {
 function initDiscordRPC() {
 
     if (rpcReady || (rpc.transport && rpc.transport.socket && rpc.transport.socket.readyState === 'open')) {
-
         return;
     }
 
@@ -163,31 +161,79 @@ app.commandLine.appendSwitch('renderer-process-limit', '3');
 app.commandLine.appendSwitch('dom-storage-enabled', 'true');
 
 const BLOCK_LIST = [
-    '*.googlesyndication.com', '*.googleadservices.com', '*.doubleclick.net',
-    '*.ads.pubmatic.com', '*.adnxs.com', '*.rubiconproject.com', '*.openx.net', '*.criteo.com',
-    '*.taboola.com', '*.outbrain.com', '*.amazon-adsystem.com', '*.adsrvr.org', '*.bidswitch.net',
-    '*.popads.net', '*.propellerads.com', '*.adsterra.com', '*.google-analytics.com',
-    '*.analytics.google.com', '*.googletagmanager.com', '*.facebook.net', '*.connect.facebook.net',
-    '*.scorecardresearch.com', '*.quantserve.com', '*.adobedtm.com', '*.hotjar.com', '*.moatads.com',
-    '*.serving-sys.com', '*.advertising.com', '*.adform.net', '*.adroll.com', '*.yieldmo.com',
-    '*.contextweb.com', '*.revcontent.com', '*.skimresources.com', '*.mookie1.com',
-    '*.fingerprintjs.com', '*.privacy-center.org', '*.fingerprint.com', '*.fingerprintjs.io',
-    '*.sessioncam.com', '*.smartlook.com', '*.contentsquare.net', '*.usercentrics.eu',
-    '*.intercom.io', '*.intercomcdn.com', '*.clarity.ms', '*.mouseflow.com', '*.fullstory.com',
-    '*.twitter.com', '*.t.co', '*.static.ads-twitter.com', '*.analytics.twitter.com',
-    '*.snapads.com', '*.tiktokads.com', '*.business.tiktok.com',
-    '*.omtrdc.net', '*.demdex.net', '*.adobedc.net', '*.everesttech.net',
-    '*.stats.wp.com', '*.mixpanel.com', '*.amplitude.com', '*.logrocket.com', '*.segment.io',
-    '*.datadoghq.com', '*.newrelic.com', '*.nr-data.net', '*.bugsnag.com',
-    '*.yandexadexchange.net', '*.realsrv.com', '*.inmobi.com', '*.trafmag.com', '*.exdynsrv.com',
-    '*.dynamicadx.com', '*.clickaine.com', '*.adkernel.com', '*.clickadu.com', '*.hilltopads.net',
-    '*.onclkds.com', '*.shorte.st', '*.exoclick.com', '*.redirectvoluum.com', '*trk*',
-    '*.affec.tv', '*.affiliatly.com', '*.tradedoubler.com',
-    '*.adobe.com', '*.marketing.adobe.com', '*.assets.adobe.com', '*.experiencecloud.adobe.com',
-    '*.experience.adobe.com', '*.adobe-marketing-cloud.com', '*.adobedc.com', '*.adobedc.net',
-    '*.adobeid.com', '*.adobelogin.com', '*.ims-na1.adobelogin.com', '*.ims-eu1.adobelogin.com',
-    '*.adobe-analytics.com', '*.metrics.adobe.com', '*.adobemarketingcloud.com', '*.adobedtm.com',
-    '*.2o7.net', '*.sc.omtrdc.net', '*.adobedc.services', '*.adobe-fonts.net'
+    'googlesyndication.com', 'googleadservices.com', 'doubleclick.net',
+    'ads.pubmatic.com', 'adnxs.com', 'rubiconproject.com', 'openx.net', 'criteo.com',
+    'taboola.com', 'outbrain.com', 'amazon-adsystem.com', 'adsrvr.org', 'bidswitch.net',
+    'popads.net', 'propellerads.com', 'adsterra.com', 'google-analytics.com',
+    'analytics.google.com', 'googletagmanager.com', 'facebook.net', 'connect.facebook.net',
+    'scorecardresearch.com', 'quantserve.com', 'adobedtm.com', 'hotjar.com', 'moatads.com',
+    'serving-sys.com', 'advertising.com', 'adform.net', 'adroll.com', 'yieldmo.com',
+    'contextweb.com', 'revcontent.com', 'skimresources.com', 'mookie1.com',
+    'fingerprintjs.com', 'privacy-center.org', 'fingerprint.com', 'fingerprintjs.io',
+    'sessioncam.com', 'smartlook.com', 'contentsquare.net', 'usercentrics.eu',
+    'intercom.io', 'intercomcdn.com', 'clarity.ms', 'mouseflow.com', 'fullstory.com',
+    'twitter.com', 't.co', 'static.ads-twitter.com', 'analytics.twitter.com',
+    'snapads.com', 'tiktokads.com', 'business.tiktok.com',
+    'omtrdc.net', 'demdex.net', 'adobedc.net', 'everesttech.net',
+    'stats.wp.com', 'mixpanel.com', 'amplitude.com', 'logrocket.com', 'segment.io',
+    'datadoghq.com', 'newrelic.com', 'nr-data.net', 'bugsnag.com',
+    'yandexadexchange.net', 'realsrv.com', 'inmobi.com', 'trafmag.com', 'exdynsrv.com',
+    'dynamicadx.com', 'clickaine.com', 'adkernel.com', 'clickadu.com', 'hilltopads.net',
+    'onclkds.com', 'shorte.st', 'exoclick.com', 'redirectvoluum.com', 'trk',
+    'affec.tv', 'affiliatly.com', 'tradedoubler.com',
+    'adobe.com', 'marketing.adobe.com', 'assets.adobe.com', 'experiencecloud.adobe.com',
+    'experience.adobe.com', 'adobe-marketing-cloud.com', 'adobedc.com', 'adobedc.net',
+    'adobeid.com', 'adobelogin.com', 'ims-na1.adobelogin.com', 'ims-eu1.adobelogin.com',
+    'adobe-analytics.com', 'metrics.adobe.com', 'adobemarketingcloud.com',
+    '2o7.net', 'sc.omtrdc.net', 'adobedc.services', 'adobe-fonts.net',
+    'adtago.s3.amazonaws.com', 'analyticsengine.s3.amazonaws.com',
+    'analytics.s3.amazonaws.com', 'advice-ads.s3.amazonaws.com',
+    'pagead2.googlesyndication.com', 'adservice.google.com',
+    'pagead2.googleadservices.com', 'afs.googlesyndication.com',
+    'stats.g.doubleclick.net', 'ad.doubleclick.net', 'static.doubleclick.net',
+    'm.doubleclick.net', 'mediavisor.doubleclick.net', 'ads30.adcolony.com',
+    'adc3-launch.adcolony.com', 'events3alt.adcolony.com', 'wd.adcolony.com',
+    'static.media.net', 'media.net', 'adservetx.media.net',
+    'click.googleanalytics.com', 'ssl.google-analytics.com', 'adm.hotjar.com',
+    'identify.hotjar.com', 'insights.hotjar.com', 'script.hotjar.com',
+    'surveys.hotjar.com', 'careers.hotjar.com', 'events.hotjar.io',
+    'cdn.mouseflow.com', 'o2.mouseflow.com', 'gtm.mouseflow.com',
+    'api.mouseflow.com', 'tools.mouseflow.com', 'cdn-test.mouseflow.com',
+    'freshmarketer.com', 'claritybt.freshmarketer.com', 'fwtracks.freshmarketer.com',
+    'luckyorange.com', 'api.luckyorange.com', 'realtime.luckyorange.com',
+    'cdn.luckyorange.com', 'w1.luckyorange.com', 'upload.luckyorange.net',
+    'cs.luckyorange.net', 'settings.luckyorange.net', 'notify.bugsnag.com',
+    'sessions.bugsnag.com', 'api.bugsnag.com', 'app.bugsnag.com',
+    'browser.sentry-cdn.com', 'app.getsentry.com', 'pixel.facebook.com',
+    'an.facebook.com', 'ads-api.twitter.com', 'ads.linkedin.com',
+    'analytics.pointdrive.linkedin.com', 'ads.pinterest.com',
+    'log.pinterest.com', 'analytics.pinterest.com', 'trk.pinterest.com',
+    'events.reddit.com', 'events.redditmedia.com', 'ads.youtube.com',
+    'ads-api.tiktok.com', 'analytics.tiktok.com', 'ads-sg.tiktok.com',
+    'analytics-sg.tiktok.com', 'business-api.tiktok.com', 'ads.tiktok.com',
+    'log.byteoversea.com', 'ads.yahoo.com', 'analytics.yahoo.com',
+    'geo.yahoo.com', 'udcm.yahoo.com', 'analytics.query.yahoo.com',
+    'partnerads.ysm.yahoo.com', 'log.fc.yahoo.com', 'gemini.yahoo.com',
+    'adtech.yahooinc.com', 'extmaps-api.yandex.net', 'appmetrica.yandex.ru',
+    'adfstat.yandex.ru', 'metrika.yandex.ru', 'offerwall.yandex.net',
+    'adfox.yandex.ru', 'auction.unityads.unity3d.com',
+    'webview.unityads.unity3d.com', 'config.unityads.unity3d.com',
+    'adserver.unityads.unity3d.com', 'iot-eu-logser.realme.com',
+    'iot-logser.realme.com', 'bdapi-ads.realmemobile.com',
+    'bdapi-in-ads.realmemobile.com', 'api.ad.xiaomi.com',
+    'data.mistat.xiaomi.com', 'data.mistat.india.xiaomi.com',
+    'data.mistat.rus.xiaomi.com', 'sdkconfig.ad.xiaomi.com',
+    'sdkconfig.ad.intl.xiaomi.com', 'tracking.rus.miui.com',
+    'adsfs.oppomobile.com', 'adx.ads.oppomobile.com',
+    'ck.ads.oppomobile.com', 'data.ads.oppomobile.com',
+    'metrics.data.hicloud.com', 'metrics2.data.hicloud.com',
+    'grs.hicloud.com', 'logservice.hicloud.com', 'logservice1.hicloud.com',
+    'logbak.hicloud.com', 'click.oneplus.cn', 'open.oneplus.net',
+    'samsungads.com', 'smetrics.samsung.com', 'nmetrics.samsung.com',
+    'samsung-com.112.2o7.net', 'analytics-api.samsunghealthcn.com',
+    'iadsdk.apple.com', 'metrics.icloud.com', 'metrics.mzstatic.com',
+    'api-adservices.apple.com', 'books-analytics-events.apple.com',
+    'weather-analytics-events.apple.com', 'notes-analytics-events.apple.com'
 ];
 
 const NEWCP_COSMETIC_CSS = `
@@ -212,10 +258,10 @@ function setupSessionInterceptors(sess) {
             if (relevantTypes.includes(details.resourceType)) {
                 for (const key of Object.keys(headers)) {
                     const lowerKey = key.toLowerCase();
+
                     if (lowerKey === 'x-frame-options') {
                         delete headers[key];
                     } else if (lowerKey === 'content-security-policy') {
-
                         const originalValue = Array.isArray(headers[key]) ? headers[key][0] : headers[key];
                         headers[key] = [(originalValue || '').split(';').filter(d => !d.trim().startsWith('frame-ancestors')).join(';')];
                     }
@@ -231,7 +277,9 @@ function setupSessionInterceptors(sess) {
     });
 
     sess.webRequest.onBeforeRequest((details, callback) => {
-        const shouldBlock = BLOCK_LIST.some(blockItem => (details.url || '').includes(blockItem));
+        const url = (details.url || '').toLowerCase();
+
+        const shouldBlock = BLOCK_LIST.some(domain => url.includes(domain));
         callback({
             cancel: shouldBlock
         });
@@ -239,7 +287,6 @@ function setupSessionInterceptors(sess) {
 }
 
 function resizeView() {
-
     if (!mainWindow || mainWindow.isDestroyed() || !view || view.webContents.isDestroyed()) {
         return;
     }
@@ -267,7 +314,7 @@ function showAboutDialog() {
         type: 'info',
         title: 'About',
         message: `CPPS Launcher v${appVersion}`,
-        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
+        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nFlash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
         buttons: ['OK']
     });
 }
@@ -300,7 +347,6 @@ async function clearBrowsingAndFlashData() {
     console.log(`Attempting to clear Flash data in: ${flashDataPath}`);
 
     try {
-
         await fsPromises.stat(flashDataPath);
 
         await fsPromises.rmdir(flashDataPath, {
@@ -427,10 +473,8 @@ async function toggleFlashFit() {
     try {
 
         if (isFlashFitted) {
-
             flashFitCSSKey = await view.webContents.insertCSS(HIDE_SCROLLBAR_CSS);
         } else if (flashFitCSSKey) {
-
             if (view && !view.webContents.isDestroyed()) {
                 await view.webContents.removeInsertedCSS(flashFitCSSKey);
             }
@@ -471,162 +515,132 @@ async function toggleFlashFit() {
 }
 
 const menuTemplate = [{
-        label: 'Servers',
-        submenu: [{
-                label: 'New Club Penguin',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.newcp.net/');
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'CPPS.to',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/');
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Antique Penguin',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/');
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Club Penguin Zero',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/');
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Original Penguin',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/');
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Club Penguin Dimensions',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login');
-                }
+    label: 'Servers',
+    submenu: [{
+        label: 'New Club Penguin',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.newcp.net/');
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'CPPS.to',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/');
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Antique Penguin',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/');
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Club Penguin Zero',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/');
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Original Penguin',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/');
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Club Penguin Dimensions',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login');
+        }
+    }]
+}, {
+    label: 'Options',
+    submenu: [{
+        label: 'Reload',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.reload();
+        },
+        accelerator: 'F5'
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Toggle Fullscreen Window',
+        accelerator: 'F11',
+        click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.setFullScreen(!mainWindow.isFullScreen());
             }
-        ]
-    },
-    {
-        label: 'Options',
-        submenu: [{
-                label: 'Reload',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.reload();
-                },
-                accelerator: 'F5'
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Toggle Fullscreen Window',
-                accelerator: 'F11',
-                click: () => {
-                    if (mainWindow && !mainWindow.isDestroyed()) {
-                        mainWindow.setFullScreen(!mainWindow.isFullScreen());
-                    }
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Toggle Fit Flash to Window',
-                click: toggleFlashFit
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Flash Player General Settings',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager02.html');
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Zoom In',
-                accelerator: 'CmdOrCtrl+=',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) {
-                        const currentZoom = view.webContents.getZoomFactor();
-                        const newZoom = Math.min(3.0, currentZoom + 0.1);
-                        view.webContents.setZoomFactor(newZoom);
-                        console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
-                    }
-                }
-            },
-            {
-                label: 'Zoom Out',
-                accelerator: 'CmdOrCtrl+-',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) {
-                        const currentZoom = view.webContents.getZoomFactor();
-                        const newZoom = Math.max(0.5, currentZoom - 0.1);
-                        view.webContents.setZoomFactor(newZoom);
-                        console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
-                    }
-                }
-            },
-            {
-                label: 'Reset Zoom',
-                accelerator: 'CmdOrCtrl+0',
-                click: () => {
-                    if (view && !view.webContents.isDestroyed()) {
-                        view.webContents.setZoomFactor(1.0);
-                        console.log(`Zoom Factor reset to: 1.0`);
-                    }
-                }
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Clear Data',
-                click: clearBrowsingAndFlashData
-            },
-            {
-                type: 'separator'
-            },
-            {
-                label: 'Check for Updates',
-                click: () => {
-
-                    shell.openExternal('https://github.com/Dragon9135/CPPS-Launcher/releases/latest');
-                }
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Toggle Fit Flash to Window',
+        click: toggleFlashFit
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Flash Player General Settings',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager02.html');
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Zoom In',
+        accelerator: 'CmdOrCtrl+=',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) {
+                const currentZoom = view.webContents.getZoomFactor();
+                const newZoom = Math.min(3.0, currentZoom + 0.1);
+                view.webContents.setZoomFactor(newZoom);
+                console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
             }
+        }
+    }, {
+        label: 'Zoom Out',
+        accelerator: 'CmdOrCtrl+-',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) {
+                const currentZoom = view.webContents.getZoomFactor();
+                const newZoom = Math.max(0.5, currentZoom - 0.1);
+                view.webContents.setZoomFactor(newZoom);
+                console.log(`Zoom Factor set to: ${newZoom.toFixed(1)}`);
+            }
+        }
+    }, {
+        label: 'Reset Zoom',
+        accelerator: 'CmdOrCtrl+0',
+        click: () => {
+            if (view && !view.webContents.isDestroyed()) {
+                view.webContents.setZoomFactor(1.0);
+                console.log(`Zoom Factor reset to: 1.0`);
+            }
+        }
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Clear Data',
+        click: clearBrowsingAndFlashData
+    }, {
+        type: 'separator'
+    }, {
+        label: 'Check for Updates',
+        click: () => {
 
-        ]
-    },
-    {
-        label: 'About',
-        click: showAboutDialog
-    }
-];
+            shell.openExternal('https://github.com/Dragon9135/CPPS-Launcher/releases/latest');
+        }
+    }]
+}, {
+    label: 'About',
+    click: showAboutDialog
+}];
 
 if (isDev) {
-    const optionsSubmenu = menuTemplate.find(item => item.label === 'Options')?.submenu;
+    const optionsSubmenu = menuTemplate.find(item => item.label === 'Options') ? .submenu;
     if (optionsSubmenu) {
         optionsSubmenu.push({
             type: 'separator'
@@ -660,7 +674,7 @@ function createWindow() {
     });
 
     mainWindow.on('closed', () => {
-        app.quit();
+        mainWindow = null;
     });
 
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
@@ -695,20 +709,80 @@ function createWindow() {
 
     setupSessionInterceptors(view.webContents.session);
 
+    async function applySiteSpecificPatches(url) {
+        try {
+            if (!view || view.webContents.isDestroyed()) return;
+
+            if (url.includes('newcp.net')) {
+                await view.webContents.insertCSS(NEWCP_COSMETIC_CSS);
+                console.log(`Cosmetic filter applied to newcp.net (URL: ${url})`);
+
+                let playButtonText = 'Play Now!';
+                if (url.includes('/pt-BR/')) {
+                    playButtonText = 'Jogar!';
+                } else if (url.includes('/es-LA/')) {
+                    playButtonText = '¡Jugar!';
+                }
+
+                const replaceButtonScript = `
+                  (function() {
+                    try {
+                      const downloadLink = document.querySelector('a.nav-link[href="/download"]');
+                      if (downloadLink) {
+                        const newText = '${playButtonText}'; 
+                        const newPlayButtonHTML = \`
+                          <a href="/plays?force=true#/login" data-rr-ui-event-key="/plays?force=true#/login" class="nav-link">
+                            <button type="submit" id="Navbar_download-btn__6D0hQ" class="btn btn-danger">
+                              <div id="Navbar_download-text__FSfPd" style="border: none; position: unset;">\${newText}</div>
+                            </button>
+                          </a>\`;
+                        downloadLink.outerHTML = newPlayButtonHTML;
+                        console.log('CPPS Launcher: Replaced "Download" button with "' + newText + '" button.');
+                      } else {
+
+                      }
+                    } catch (e) {
+                      console.error('CPPS Launcher: Error replacing button:', e);
+                    }
+                  })();
+                `;
+                await view.webContents.executeJavaScript(replaceButtonScript);
+            }
+
+            if (isFlashFitted) {
+                console.log("Resetting Fit Flash state due to navigation.");
+                if (flashFitCSSKey) {
+                    try {
+                        if (view && !view.webContents.isDestroyed()) {
+                            await view.webContents.removeInsertedCSS(flashFitCSSKey);
+                        }
+                    } catch (e) {
+                        console.warn("Could not remove flash fit CSS:", e.message);
+                    }
+                    flashFitCSSKey = null;
+                }
+                isFlashFitted = false;
+            }
+        } catch (err) {
+            console.error('Error during applySiteSpecificPatches:', err);
+        }
+    }
+
     view.webContents.on('crashed', (event, killed) => {
         console.error(`BrowserView crashed! Killed: ${killed}`);
         if (mainWindow && !mainWindow.isDestroyed()) {
             dialog.showErrorBox("Error", "The game view process has crashed. Please try reloading (Options > Reload) or restarting the application.");
         }
-
     });
 
     view.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
 
         if (errorCode === -3) {
-            if (BLOCK_LIST.some(blockItem => (validatedURL || '').includes(blockItem))) {
+
+            if (BLOCK_LIST.some(domain => (validatedURL || '').toLowerCase().includes(domain))) {
                 console.log(`Ad/tracker request blocked (ERR_ABORTED): ${validatedURL}`);
             } else {
+
                 console.warn(`Load aborted (may be intentional): ${validatedURL} (${errorCode})`);
             }
             return;
@@ -726,71 +800,20 @@ function createWindow() {
     });
 
     view.webContents.on('did-finish-load', async () => {
-        try {
-            if (!view || view.webContents.isDestroyed()) return;
+        if (!view || view.webContents.isDestroyed()) return;
+        await applySiteSpecificPatches(view.webContents.getURL());
+    });
 
-            const url = view.webContents.getURL();
+    view.webContents.on('did-navigate-in-page', async (event, url, isMainFrame) => {
 
-            if (url.includes('newcp.net')) {
-                await view.webContents.insertCSS(NEWCP_COSMETIC_CSS);
-                console.log("Cosmetic filter applied to newcp.net.");
-
-                let playButtonText = 'Play Now!';
-                if (url.includes('/pt-BR/')) {
-                    playButtonText = 'Jogar!';
-                } else if (url.includes('/es-LA/')) {
-                    playButtonText = '¡Jugar!';
-                }
-
-                const replaceButtonScript = `
-          (function() {
-            try {
-
-              const downloadLink = document.querySelector('a.nav-link[href="/download"]');
-
-              if (downloadLink) {
-
-                const newText = '${playButtonText}'; 
-
-                const newPlayButtonHTML = \`
-                  <a href="/plays?force=true#/login" data-rr-ui-event-key="/plays?force=true#/login" class="nav-link">
-                    <button type="submit" id="Navbar_download-btn__6D0hQ" class="btn btn-danger">
-                      <div id="Navbar_download-text__FSfPd" style="border: none; position: unset;">\${newText}</div>
-                    </button>
-                  </a>\`;
-
-                downloadLink.outerHTML = newPlayButtonHTML;
-                console.log('CPPS Launcher: Replaced "Download" button with "' + newText + '" button.');
-              } else {
-                console.log('CPPS Launcher: "Download" button (a.nav-link[href="/download"]) not found, no replacement made.');
-              }
-            } catch (e) {
-              console.error('CPPS Launcher: Error replacing button:', e);
-            }
-          })();
-        `;
-                await view.webContents.executeJavaScript(replaceButtonScript);
-
-            }
-
-            if (isFlashFitted) {
-                console.log("Resetting Fit Flash state due to navigation.");
-                if (flashFitCSSKey) {
-                    try {
-                        await view.webContents.removeInsertedCSS(flashFitCSSKey);
-                    } catch (e) {}
-                    flashFitCSSKey = null;
-                }
-                isFlashFitted = false;
-            }
-        } catch (err) {
-            console.error('Error during did-finish-load event:', err);
+        if (isMainFrame && view && !view.webContents.isDestroyed()) {
+            await applySiteSpecificPatches(url);
         }
     });
 
     view.webContents.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36');
-    const initialUrl = 'https://newcp.net/en-US/';
 
+    const initialUrl = 'https://newcp.net/en-US/';
     try {
         console.log(`Loading initial URL: ${initialUrl}`);
         view.webContents.loadURL(initialUrl);
@@ -802,7 +825,6 @@ function createWindow() {
     }
 
     initDiscordRPC();
-
 }
 
 try {
@@ -837,7 +859,7 @@ app.on('activate', () => {
 
 app.whenReady().then(() => {
 
-    if (!fs.existsSync(pluginPath)) {
+    if (!existsSync(pluginPath)) {
         console.error(`Flash plugin not found at expected path: ${pluginPath}`);
         dialog.showErrorBox("Flash Plugin Error", `Flash plugin (pepflashplayer.dll) not found.\n\nArchitecture: ${arch}\nExpected location:\n${pluginPath}\n\nPlease ensure the plugin is placed correctly in the 'plugins/${arch}' folder next to the application executable.`);
 
@@ -852,7 +874,6 @@ app.whenReady().then(() => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-
     if (!isDev && mainWindow && !mainWindow.isDestroyed()) {
         dialog.showErrorBox('Unhandled Error', `An unexpected error occurred (Promise Rejection).\nPlease report this issue.\nDetails: ${reason}`);
     }
@@ -860,9 +881,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error, origin) => {
     console.error(`Caught exception: ${error}\nException origin: ${origin}`);
-
     if (app.isReady() && mainWindow && !mainWindow.isDestroyed()) {
         dialog.showErrorBox('Unhandled Error', `A critical error occurred: ${error.message}\nOrigin: ${origin}\n\nPlease report this issue.\n${error.stack}`);
     }
-
 });
