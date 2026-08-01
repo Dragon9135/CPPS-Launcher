@@ -1,6 +1,6 @@
 {
   "name": "CPPS-Launcher",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "A launcher for Flash-based Club Penguin Private Servers.",
   "author": "Dragon9135",
   "main": "main.js",
@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "electron": "11.5.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^22.14.13"
   },
   "build": {
     "appId": "com.lightweight.cppslauncher",
