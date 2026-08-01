@@ -5,7 +5,7 @@ A lightweight, highly optimized desktop launcher for Club Penguin Private Server
 > [!NOTE]
 > AI assistance was used for optimization, bug fixes, and advanced feature integration.
 
-## ✨ Features
+## Features
 
 ### Multi-Server Support
 Easily switch between popular CPPS servers via the `Servers` menu:
@@ -146,7 +146,7 @@ With Adobe Flash Player's end-of-life on December 31, 2020, accessing legacy Clu
 ## Critical Security Warning
 
 > [!CAUTION]
-> This application uses **outdated technology** (Electron 11.5.0 based on Chromium 87, and Flash Player via the community-maintained Clean Flash builds) that **no longer receives official security updates from Adobe**.
+> This application uses **outdated technology** **(Electron 11.5.0 based on Chromium 87, and Flash Player via the community-maintained Clean Flash builds)** that **no longer receives official security updates from Adobe**.
 >
 > * The underlying Chromium version has known, unpatched vulnerabilities.
 > * **DO NOT** use this launcher for general web browsing.
