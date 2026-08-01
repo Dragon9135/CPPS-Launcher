@@ -1,0 +1,47 @@
+name: Build CPPS Launcher
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Verify Flash Plugins Exist
+        run: |
+          if (-not (Test-Path "./plugins/x86/pepflashplayer.dll")) {
+            Write-Error "Flash plugin for x86 not found in ./plugins/x86/"
+            exit 1
+          }
+          if (-not (Test-Path "./plugins/x64/pepflashplayer.dll")) {
+            Write-Error "Flash plugin for x64 not found in ./plugins/x64/"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CPPS-Launcher-Build
+          path: |
+            dist/*.exe
+            dist/*.zip
