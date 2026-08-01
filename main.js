@@ -83,7 +83,7 @@ app.commandLine.appendSwitch('disable-features', [
 ].join(','));
 
 app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
-app.commandLine.appendSwitch('ppapi-flash-version', '34.0.0.330');
+app.commandLine.appendSwitch('ppapi-flash-version', '34.0.0.376');
 app.commandLine.appendSwitch('allow-outdated-plugins');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 app.commandLine.appendSwitch('no-sandbox');
