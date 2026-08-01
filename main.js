@@ -19,11 +19,13 @@ const topMenuHeight = 0;
 const arch = process.arch === 'ia32' ? 'x86' : 'x64';
 const pluginName = 'pepflashplayer.dll';
 const pluginPath = path.join(resourcesPath, 'plugins', arch, pluginName);
+const FLASH_VERSION = '34.0.0.376';
 
 let mainWindow = null;
 let view = null;
 let isFlashFitted = false;
 let flashFitCSSKey = null;
+let isClearingData = false;
 
 const clientId = 'CLIENT_ID';
 const rpc = new RPC.Client({ transport: 'ipc' });
@@ -83,7 +85,7 @@ app.commandLine.appendSwitch('disable-features', [
 ].join(','));
 
 app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
-app.commandLine.appendSwitch('ppapi-flash-version', '34.0.0.376');
+app.commandLine.appendSwitch('ppapi-flash-version', FLASH_VERSION);
 app.commandLine.appendSwitch('allow-outdated-plugins');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
@@ -94,17 +96,13 @@ app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
 app.commandLine.appendSwitch('enable-accelerated-video-decode');
 app.commandLine.appendSwitch('enable-threaded-compositing');
 app.commandLine.appendSwitch('disable-gpu-vsync');
-app.commandLine.appendSwitch('disable-smooth-scrolling');
-app.commandLine.appendSwitch('disable-distance-field-text');
-app.commandLine.appendSwitch('disable-lcd-text');
-app.commandLine.appendSwitch('disable-font-subpixel-positioning');
 app.commandLine.appendSwitch('disable-background-networking');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-breakpad');
 app.commandLine.appendSwitch('disable-print-preview');
 app.commandLine.appendSwitch('disable-client-side-phishing-detection');
-app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-sync');
 app.commandLine.appendSwitch('disable-extensions');
 app.commandLine.appendSwitch('disable-component-update');
@@ -129,14 +127,14 @@ const BLOCK_LIST = [
     'fingerprintjs.com', 'privacy-center.org', 'fingerprint.com', 'fingerprintjs.io',
     'sessioncam.com', 'smartlook.com', 'contentsquare.net', 'usercentrics.eu',
     'intercom.io', 'intercomcdn.com', 'clarity.ms', 'mouseflow.com', 'fullstory.com',
-    'twitter.com', 'tracker.', 'static.ads-twitter.com', 'analytics.twitter.com',
+    'twitter.com', 'static.ads-twitter.com', 'analytics.twitter.com',
     'snapads.com', 'tiktokads.com', 'business.tiktok.com',
     'omtrdc.net', 'demdex.net', 'adobedc.net', 'everesttech.net',
     'stats.wp.com', 'mixpanel.com', 'amplitude.com', 'logrocket.com', 'segment.io',
     'datadoghq.com', 'newrelic.com', 'nr-data.net', 'bugsnag.com',
     'yandexadexchange.net', 'realsrv.com', 'inmobi.com', 'trafmag.com', 'exdynsrv.com',
     'dynamicadx.com', 'clickaine.com', 'adkernel.com', 'clickadu.com', 'hilltopads.net',
-    'onclkds.com', 'shorte.st', 'exoclick.com', 'redirectvoluum.com', 'tracking.',
+    'onclkds.com', 'shorte.st', 'exoclick.com', 'redirectvoluum.com',
     'affec.tv', 'affiliatly.com', 'tradedoubler.com',
     'adtago.s3.amazonaws.com', 'analyticsengine.s3.amazonaws.com',
     'analytics.s3.amazonaws.com', 'advice-ads.s3.amazonaws.com',
@@ -188,8 +186,22 @@ const BLOCK_LIST = [
     'weather-analytics-events.apple.com', 'notes-analytics-events.apple.com'
 ];
 
+const BLOCKED_DOMAINS = new Set(BLOCK_LIST);
+
+function extractHostname(url) {
+    const start = url.indexOf('://') + 3;
+    if (start < 3) return '';
+    let end = url.indexOf('/', start);
+    if (end === -1) end = url.indexOf('?', start);
+    if (end === -1) end = url.length;
+    const host = url.substring(start, end);
+    const colonPos = host.lastIndexOf(':');
+    return colonPos > -1 ? host.substring(0, colonPos) : host;
+}
+
 function setupSessionInterceptors(sess) {
     if (!sess) return;
+    
     sess.webRequest.onHeadersReceived((details, callback) => {
         try {
             const headers = { ...details.responseHeaders };
@@ -210,9 +222,29 @@ function setupSessionInterceptors(sess) {
             callback({});
         }
     });
+    
     sess.webRequest.onBeforeRequest((details, callback) => {
-        const url = (details.url || '').toLowerCase();
-        const shouldBlock = BLOCK_LIST.some(domain => url.includes(domain));
+        const url = details.url || '';
+        const hostname = extractHostname(url).toLowerCase();
+        
+        if (!hostname) {
+            callback({ cancel: false });
+            return;
+        }
+        
+        let shouldBlock = false;
+        
+        if (BLOCKED_DOMAINS.has(hostname)) {
+            shouldBlock = true;
+        } else {
+            for (const domain of BLOCKED_DOMAINS) {
+                if (hostname.endsWith('.' + domain)) {
+                    shouldBlock = true;
+                    break;
+                }
+            }
+        }
+        
         callback({ cancel: shouldBlock });
     });
 }
@@ -239,86 +271,98 @@ function showAboutDialog() {
         type: 'info',
         title: 'About',
         message: `CPPS Launcher v${appVersion}`,
-        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.376 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
+        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: ${FLASH_VERSION} (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
         buttons: ['OK']
     });
 }
 
 async function clearBrowsingAndFlashData() {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    const confirmation = await dialog.showMessageBox(mainWindow, {
-        type: 'question',
-        title: 'Confirm Data Clearing',
-        message: 'Clear browsing data and Flash Player data?',
-        detail: 'This will remove cache, cookies, local storage, and Flash Player saved data (LSOs). Logins and site settings might be lost. The current page will reload after clearing.',
-        buttons: ['Clear Data', 'Cancel'],
-        defaultId: 1,
-        cancelId: 1
-    });
-    if (confirmation.response === 1) return;
-
-    let flashDataCleared = false;
-    let browsingDataCleared = false;
-    let flashError = null;
-    let browsingError = null;
-
-    const userDataPath = app.getPath('userData');
-    const flashDataPath = path.join(userDataPath, 'Pepper Data');
+    if (isClearingData) return;
+    isClearingData = true;
     
     try {
-        await fsPromises.stat(flashDataPath);
-        await fsPromises.rmdir(flashDataPath, { recursive: true, maxRetries: 3 });
-        flashDataCleared = true;
-    } catch (err) {
-        if (err.code === 'ENOENT') flashDataCleared = true;
-        else flashError = err;
-    }
-
-    if (view && view.webContents && !view.webContents.isDestroyed()) {
-        try {
-            const electronSession = view.webContents.session;
-            const storageOptions = {
-                storages: ['cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage'],
-                origin: '*'
-            };
-            await Promise.all([
-                electronSession.clearCache(),
-                electronSession.clearStorageData(storageOptions)
-            ]);
-            browsingDataCleared = true;
-        } catch (err) {
-            browsingError = err;
-        }
-    } else {
-        if (flashDataCleared) browsingDataCleared = true;
-    }
-
-    let finalTitle, finalMessage, finalDetail, finalType = 'info';
-    if (flashDataCleared && browsingDataCleared) {
-        finalTitle = 'Data Cleared';
-        finalMessage = 'Browsing data and Flash Player data have been cleared successfully.';
-        finalDetail = 'The current page will now reload.';
-    } else {
-        finalTitle = 'Clearing Issue';
-        finalMessage = 'There was an issue clearing all data.';
-        const flashStatus = flashDataCleared ? 'Cleared' : `Failed (${flashError?.code || 'Check Logs'})`;
-        const browsingStatus = browsingDataCleared ? 'Cleared' : `Failed (${browsingError?.message?.split(':')[0] || 'Check Logs'})`;
-        finalDetail = `Flash Data: ${flashStatus}\nBrowsing Data: ${browsingStatus}\nPlease check console logs for details.`;
-        finalType = 'warning';
-    }
-
-    if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-            type: finalType, title: finalTitle, message: finalMessage, detail: finalDetail, buttons: ['OK']
-        }).then(() => {
-            if (view && !view.webContents.isDestroyed()) view.webContents.reloadIgnoringCache();
+        if (!mainWindow || mainWindow.isDestroyed()) return;
+        
+        const confirmation = await dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            title: 'Confirm Data Clearing',
+            message: 'Clear browsing data and Flash Player data?',
+            detail: 'This will remove cache, cookies, local storage, and Flash Player saved data (LSOs). Logins and site settings might be lost. The current page will reload after clearing.',
+            buttons: ['Clear Data', 'Cancel'],
+            defaultId: 1,
+            cancelId: 1
         });
+        
+        if (confirmation.response === 1) return;
+
+        let flashDataCleared = false;
+        let browsingDataCleared = false;
+        let flashError = null;
+        let browsingError = null;
+
+        const userDataPath = app.getPath('userData');
+        const flashDataPath = path.join(userDataPath, 'Pepper Data');
+        
+        try {
+            await fsPromises.stat(flashDataPath);
+            await fsPromises.rmdir(flashDataPath, { recursive: true, maxRetries: 3 });
+            flashDataCleared = true;
+        } catch (err) {
+            if (err.code === 'ENOENT') flashDataCleared = true;
+            else flashError = err;
+        }
+
+        if (view && view.webContents && !view.webContents.isDestroyed()) {
+            try {
+                const electronSession = view.webContents.session;
+                const storageOptions = {
+                    storages: ['cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage'],
+                    origin: '*'
+                };
+                await Promise.all([
+                    electronSession.clearCache(),
+                    electronSession.clearStorageData(storageOptions)
+                ]);
+                browsingDataCleared = true;
+            } catch (err) {
+                browsingError = err;
+            }
+        } else {
+            if (flashDataCleared) browsingDataCleared = true;
+        }
+
+        let finalTitle, finalMessage, finalDetail, finalType = 'info';
+        if (flashDataCleared && browsingDataCleared) {
+            finalTitle = 'Data Cleared';
+            finalMessage = 'Browsing data and Flash Player data have been cleared successfully.';
+            finalDetail = 'The current page will now reload.';
+        } else {
+            finalTitle = 'Clearing Issue';
+            finalMessage = 'There was an issue clearing all data.';
+            const flashStatus = flashDataCleared ? 'Cleared' : `Failed (${flashError?.code || 'Check Logs'})`;
+            const browsingStatus = browsingDataCleared ? 'Cleared' : `Failed (${browsingError?.message?.split(':')[0] || 'Check Logs'})`;
+            finalDetail = `Flash Data: ${flashStatus}\nBrowsing Data: ${browsingStatus}\nPlease check console logs for details.`;
+            finalType = 'warning';
+        }
+
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            dialog.showMessageBox(mainWindow, {
+                type: finalType, title: finalTitle, message: finalMessage, detail: finalDetail, buttons: ['OK']
+            }).then(() => {
+                if (view && !view.webContents.isDestroyed()) view.webContents.reloadIgnoringCache();
+            });
+        }
+    } finally {
+        isClearingData = false;
     }
 }
 
 async function toggleFlashFit() {
     if (!view || !view.webContents || view.webContents.isDestroyed()) return;
+    
+    const previousState = isFlashFitted;
     isFlashFitted = !isFlashFitted;
+    
     const script = `
       (function() {
         const flashElement = document.querySelector('embed[type="application/x-shockwave-flash"], object[type="application/x-shockwave-flash"], object[classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"]');
@@ -343,6 +387,7 @@ async function toggleFlashFit() {
       })();
     `;
     const HIDE_SCROLLBAR_CSS = 'html, body { overflow: hidden !important; }';
+    
     try {
         if (isFlashFitted) {
             flashFitCSSKey = await view.webContents.insertCSS(HIDE_SCROLLBAR_CSS);
@@ -367,7 +412,7 @@ async function toggleFlashFit() {
             }
         }
     } catch (err) {
-        isFlashFitted = !isFlashFitted;
+        isFlashFitted = previousState;
         if (!isFlashFitted && flashFitCSSKey) {
             try { await view.webContents.removeInsertedCSS(flashFitCSSKey); } catch (e) {}
             flashFitCSSKey = null;
@@ -387,15 +432,25 @@ const menuTemplate = [
     {
         label: 'Servers',
         submenu: [
-            { label: 'CPPS.to', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/'); } },
+            { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/'); } },
+            { type: 'separator' },
+            { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login'); } },
+            { type: 'separator' },
+            { label: 'Aventure Pingouin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://aventurepingouin.com/viens-jouer/'); } },
             { type: 'separator' },
             { label: 'Antique Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/'); } },
             { type: 'separator' },
-            { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/'); } },
-            { type: 'separator' },
             { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } },
             { type: 'separator' },
-            { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login'); } }
+            { label: 'Club Penguin Atake', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://app.cpatake.boo/'); } },
+            { type: 'separator' },
+            { label: 'Fluffy Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.fluffypenguin.xyz/en/#/login'); } },
+            { type: 'separator' },
+            { label: 'CPPS.app', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpps.app/#/login'); } },
+            { type: 'separator' },
+            { label: 'CPPS.to', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/'); } },
+            { type: 'separator' },
+            { label: 'Waddle World', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.waddleworld.site/'); } }
         ]
     },
     {
@@ -481,7 +536,10 @@ function createWindow() {
 
     view.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
         if (errorCode === -3) {
-            if (BLOCK_LIST.some(domain => (validatedURL || '').toLowerCase().includes(domain))) return;
+            const hostname = extractHostname(validatedURL || '').toLowerCase();
+            if (BLOCKED_DOMAINS.has(hostname) || Array.from(BLOCKED_DOMAINS).some(domain => hostname.endsWith('.' + domain))) {
+                return;
+            }
             return;
         }
         if (!isMainFrame) return;
