@@ -31,6 +31,8 @@ let view = null;
 let isFlashFitted = false;
 let flashFitCSSKey = null;
 let isClearingData = false;
+let lastResetTime = 0;
+const RESET_COOLDOWN_MS = 500;
 
 let dynamicBlockList = new Set();
 
@@ -581,6 +583,10 @@ const menuTemplate = [
 ];
 
 function resetFlashFitState() {
+    const now = Date.now();
+    if (now - lastResetTime < RESET_COOLDOWN_MS) return;
+    lastResetTime = now;
+    
     if (isFlashFitted) {
         if (flashFitCSSKey) {
             try {
