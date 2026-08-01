@@ -516,7 +516,27 @@ function createWindow() {
     });
     mainWindow.setBrowserView(view);
     view.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
-        callback(permission === 'flash');
+        const allowedPermissions = [
+            'flash',
+            'clipboard-read',
+            'clipboard-sanitized-write',
+            'media',
+            'mediaKeySystem',
+            'geolocation',
+            'notifications'
+        ];
+        callback(allowedPermissions.includes(permission));
+    });
+
+    view.webContents.session.setPermissionCheckHandler((webContents, permission) => {
+        const allowedPermissions = [
+            'flash',
+            'clipboard-read',
+            'clipboard-sanitized-write',
+            'media',
+            'mediaKeySystem'
+        ];
+        return allowedPermissions.includes(permission);
     });
     
     resizeView();
