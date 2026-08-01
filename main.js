@@ -36,7 +36,7 @@ const RESET_COOLDOWN_MS = 500;
 
 let dynamicBlockList = new Set();
 
-const clientId = 'CLIENT_ID';
+const clientId = '1432079723126849609';
 const rpc = new RPC.Client({ transport: 'ipc' });
 let rpcReady = false;
 let rpcInterval = null;
