@@ -241,7 +241,7 @@ function showAboutDialog() {
         type: 'info',
         title: 'About',
         message: `CPPS Launcher v${appVersion}`,
-        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.330 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
+        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: 34.0.0.376 (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
         buttons: ['OK']
     });
 }
