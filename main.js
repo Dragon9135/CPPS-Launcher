@@ -544,7 +544,16 @@ function createWindow() {
 
     view.webContents.on('dom-ready', () => {
         if (!view || view.webContents.isDestroyed()) return;
+
         view.webContents.insertCSS(GLOBAL_HIDE_SCROLLBAR_CSS).catch(() => {});
+
+        const antiBotScript = `
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            Object.defineProperty(navigator, 'languages', { get: () => ['tr-TR', 'tr', 'en-US', 'en'] });
+            window.chrome = window.chrome || { runtime: {} };
+        `;
+        view.webContents.executeJavaScript(antiBotScript).catch(() => {});
     });
 
     view.webContents.on('crashed', (event, killed) => {
@@ -591,8 +600,8 @@ function createWindow() {
         if (isMainFrame && view && !view.webContents.isDestroyed()) resetFlashFitState();
     });
 
-    view.webContents.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36');
-    
+    view.webContents.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+
     const initialUrl = 'about:blank';
     view.webContents.loadURL(initialUrl).catch(err => {
         if (mainWindow && !mainWindow.isDestroyed()) {
