@@ -280,6 +280,20 @@ async function updateBlockList() {
     }
 }
 
+async function removeDirRecursive(dirPath) {
+    if (fs.existsSync(dirPath)) {
+        for (const entry of await fsPromises.readdir(dirPath, { withFileTypes: true })) {
+            const fullPath = path.join(dirPath, entry.name);
+            if (entry.isDirectory()) {
+                await removeDirRecursive(fullPath);
+            } else {
+                await fsPromises.unlink(fullPath);
+            }
+        }
+        await fsPromises.rmdir(dirPath);
+    }
+}
+
 function extractHostname(url) {
     const start = url.indexOf('://') + 3;
     if (start < 3) return '';
@@ -396,7 +410,7 @@ async function clearBrowsingAndFlashData() {
         
         try {
             await fsPromises.stat(flashDataPath);
-            await fsPromises.rmdir(flashDataPath, { recursive: true, maxRetries: 3 });
+            await removeDirRecursive(flashDataPath);
             flashDataCleared = true;
         } catch (err) {
             if (err.code === 'ENOENT') flashDataCleared = true;
