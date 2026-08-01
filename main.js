@@ -81,7 +81,7 @@ app.commandLine.appendSwitch('disable-features', [
     'MediaRouter', 'CalculateNativeWinOcclusion', 'OptimizationGuideModelDownloading',
     'InterestFeedContentSuggestions', 'InterestFeedSparePrefetch', 'GlobalMediaControls',
     'TabHoverCards', 'TabHoverCardImages', 'UseEcoQoSForBackgroundProcess',
-    'CanvasOOPRasterization', 'SurfaceControl', 'DirectManipulationStylus'
+    'CanvasOOPRasterization', 'SurfaceControl', 'DirectManipulationStylus', 'disable-blink-features', 'AutomationControlled'
 ].join(','));
 
 app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
@@ -106,7 +106,6 @@ app.commandLine.appendSwitch('disable-client-side-phishing-detection');
 app.commandLine.appendSwitch('disable-sync');
 app.commandLine.appendSwitch('disable-extensions');
 app.commandLine.appendSwitch('disable-component-update');
-app.commandLine.appendSwitch('disable-webrtc');
 app.commandLine.appendSwitch('disable-speech-api');
 app.commandLine.appendSwitch('disable-audio-input');
 app.commandLine.appendSwitch('disable-video-capture');
