@@ -11,6 +11,7 @@ const {
 const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
+const https = require('https');
 const RPC = require('discord-rpc');
 
 const isDev = !app.isPackaged;
@@ -21,11 +22,17 @@ const pluginName = 'pepflashplayer.dll';
 const pluginPath = path.join(resourcesPath, 'plugins', arch, pluginName);
 const FLASH_VERSION = '34.0.0.376';
 
+const HAGEZI_LIST_URL = 'https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/ultimate.txt';
+const BLOCKLIST_CACHE_PATH = path.join(app.getPath('userData'), 'hagezi-blocklist-cache.json');
+const BLOCKLIST_UPDATE_INTERVAL_MS = 1 * 24 * 60 * 60 * 1000;
+
 let mainWindow = null;
 let view = null;
 let isFlashFitted = false;
 let flashFitCSSKey = null;
 let isClearingData = false;
+
+let dynamicBlockList = new Set();
 
 const clientId = 'CLIENT_ID';
 const rpc = new RPC.Client({ transport: 'ipc' });
@@ -115,7 +122,7 @@ app.commandLine.appendSwitch('process-per-site');
 app.commandLine.appendSwitch('renderer-process-limit', '3');
 app.commandLine.appendSwitch('dom-storage-enabled', 'true');
 
-const BLOCK_LIST = [
+const MANUAL_BLOCK_LIST = [
     'googlesyndication.com', 'googleadservices.com', 'doubleclick.net',
     'ads.pubmatic.com', 'adnxs.com', 'rubiconproject.com', 'openx.net', 'criteo.com',
     'taboola.com', 'outbrain.com', 'amazon-adsystem.com', 'adsrvr.org', 'bidswitch.net',
@@ -123,70 +130,155 @@ const BLOCK_LIST = [
     'analytics.google.com', 'googletagmanager.com', 'facebook.net', 'connect.facebook.net',
     'scorecardresearch.com', 'quantserve.com', 'adobedtm.com', 'hotjar.com', 'moatads.com',
     'serving-sys.com', 'advertising.com', 'adform.net', 'adroll.com', 'yieldmo.com',
-    'contextweb.com', 'revcontent.com', 'skimresources.com', 'mookie1.com',
-    'fingerprintjs.com', 'privacy-center.org', 'fingerprint.com', 'fingerprintjs.io',
-    'sessioncam.com', 'smartlook.com', 'contentsquare.net', 'usercentrics.eu',
-    'intercom.io', 'intercomcdn.com', 'clarity.ms', 'mouseflow.com', 'fullstory.com',
     'twitter.com', 'static.ads-twitter.com', 'analytics.twitter.com',
     'snapads.com', 'tiktokads.com', 'business.tiktok.com',
-    'omtrdc.net', 'demdex.net', 'adobedc.net', 'everesttech.net',
-    'stats.wp.com', 'mixpanel.com', 'amplitude.com', 'logrocket.com', 'segment.io',
-    'datadoghq.com', 'newrelic.com', 'nr-data.net', 'bugsnag.com',
-    'yandexadexchange.net', 'realsrv.com', 'inmobi.com', 'trafmag.com', 'exdynsrv.com',
-    'dynamicadx.com', 'clickaine.com', 'adkernel.com', 'clickadu.com', 'hilltopads.net',
-    'onclkds.com', 'shorte.st', 'exoclick.com', 'redirectvoluum.com',
-    'affec.tv', 'affiliatly.com', 'tradedoubler.com',
-    'adtago.s3.amazonaws.com', 'analyticsengine.s3.amazonaws.com',
-    'analytics.s3.amazonaws.com', 'advice-ads.s3.amazonaws.com',
-    'pagead2.googlesyndication.com', 'adservice.google.com',
-    'pagead2.googleadservices.com', 'afs.googlesyndication.com',
-    'stats.g.doubleclick.net', 'ad.doubleclick.net', 'static.doubleclick.net',
-    'm.doubleclick.net', 'mediavisor.doubleclick.net', 'ads30.adcolony.com',
-    'adc3-launch.adcolony.com', 'events3alt.adcolony.com', 'wd.adcolony.com',
-    'static.media.net', 'media.net', 'adservetx.media.net',
-    'click.googleanalytics.com', 'ssl.google-analytics.com', 'adm.hotjar.com',
-    'identify.hotjar.com', 'insights.hotjar.com', 'script.hotjar.com',
-    'surveys.hotjar.com', 'careers.hotjar.com', 'events.hotjar.io',
-    'cdn.mouseflow.com', 'o2.mouseflow.com', 'gtm.mouseflow.com',
-    'api.mouseflow.com', 'tools.mouseflow.com', 'cdn-test.mouseflow.com',
-    'freshmarketer.com', 'claritybt.freshmarketer.com', 'fwtracks.freshmarketer.com',
-    'luckyorange.com', 'api.luckyorange.com', 'realtime.luckyorange.com',
-    'cdn.luckyorange.com', 'w1.luckyorange.com', 'upload.luckyorange.net',
-    'cs.luckyorange.net', 'settings.luckyorange.net', 'notify.bugsnag.com',
-    'sessions.bugsnag.com', 'api.bugsnag.com', 'app.bugsnag.com',
-    'browser.sentry-cdn.com', 'app.getsentry.com', 'pixel.facebook.com',
-    'an.facebook.com', 'ads-api.twitter.com', 'ads.linkedin.com',
-    'analytics.pointdrive.linkedin.com', 'ads.pinterest.com',
-    'log.pinterest.com', 'analytics.pinterest.com', 'trk.pinterest.com',
-    'events.reddit.com', 'events.redditmedia.com', 'ads.youtube.com',
-    'ads-api.tiktok.com', 'analytics.tiktok.com', 'ads-sg.tiktok.com',
-    'analytics-sg.tiktok.com', 'business-api.tiktok.com', 'ads.tiktok.com',
-    'log.byteoversea.com', 'ads.yahoo.com', 'analytics.yahoo.com',
-    'geo.yahoo.com', 'udcm.yahoo.com', 'analytics.query.yahoo.com',
-    'partnerads.ysm.yahoo.com', 'log.fc.yahoo.com', 'gemini.yahoo.com',
-    'adtech.yahooinc.com', 'extmaps-api.yandex.net', 'appmetrica.yandex.ru',
-    'adfstat.yandex.ru', 'metrika.yandex.ru', 'offerwall.yandex.net',
-    'adfox.yandex.ru', 'auction.unityads.unity3d.com',
-    'webview.unityads.unity3d.com', 'config.unityads.unity3d.com',
-    'adserver.unityads.unity3d.com', 'iot-eu-logser.realme.com',
-    'iot-logser.realme.com', 'bdapi-ads.realmemobile.com',
-    'bdapi-in-ads.realmemobile.com', 'api.ad.xiaomi.com',
-    'data.mistat.xiaomi.com', 'data.mistat.india.xiaomi.com',
-    'data.mistat.rus.xiaomi.com', 'sdkconfig.ad.xiaomi.com',
-    'sdkconfig.ad.intl.xiaomi.com', 'tracking.rus.miui.com',
-    'adsfs.oppomobile.com', 'adx.ads.oppomobile.com',
-    'ck.ads.oppomobile.com', 'data.ads.oppomobile.com',
-    'metrics.data.hicloud.com', 'metrics2.data.hicloud.com',
-    'grs.hicloud.com', 'logservice.hicloud.com', 'logservice1.hicloud.com',
-    'logbak.hicloud.com', 'click.oneplus.cn', 'open.oneplus.net',
-    'samsungads.com', 'smetrics.samsung.com', 'nmetrics.samsung.com',
-    'samsung-com.112.2o7.net', 'analytics-api.samsunghealthcn.com',
-    'iadsdk.apple.com', 'metrics.icloud.com', 'metrics.mzstatic.com',
-    'api-adservices.apple.com', 'books-analytics-events.apple.com',
-    'weather-analytics-events.apple.com', 'notes-analytics-events.apple.com'
+    'bugsnag.com', 'clarity.ms', 'mouseflow.com', 'fullstory.com'
 ];
 
-const BLOCKED_DOMAINS = new Set(BLOCK_LIST);
+const WHITELIST = new Set([
+    'cpzero.net', 'play.cpzero.net',
+    'cpdimensions.com', 'play.cpdimensions.com',
+    'aventurepingouin.com',
+    'antiquepengu.in', 'play.antiquepengu.in',
+    'ogpenguin.online', 'old.ogpenguin.online',
+    'cpatake.boo', 'app.cpatake.boo',
+    'fluffypenguin.xyz', 'play.fluffypenguin.xyz',
+    'cpps.app', 'play.cpps.app',
+    'cpps.to', 'media.cpps.to', 'play.cpps.to',
+    'waddleworld.site', 'play.waddleworld.site',
+    'macromedia.com', 'adobe.com',
+    'github.com', 'githubusercontent.com',
+    'jsdelivr.net',
+    'controld.com', 'freedns.controld.com',
+    'challenges.cloudflare.com', 'turnstile.com'
+]);
+
+function parseAdblockList(text) {
+    const domains = new Set();
+    const lines = text.split('\n');
+    
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('!') || trimmed.startsWith('#') || trimmed.startsWith('[')) continue;
+        if (trimmed.startsWith('@@')) continue;
+        if (trimmed.startsWith('/') || trimmed.includes('/')) continue;
+        
+        if (trimmed.startsWith('||')) {
+            let domain = trimmed.substring(2);
+            domain = domain.replace(/[\^\$\*].*$/, '');
+            domain = domain.replace(/[\/:].*$/, '');
+            domain = domain.toLowerCase().trim();
+            
+            if (domain && domain.length > 2 && domain.includes('.') && !domain.includes('*')) {
+                domains.add(domain);
+            }
+        }
+        else if (trimmed.startsWith('|') && !trimmed.startsWith('||')) {
+            let domain = trimmed.substring(1);
+            domain = domain.replace(/^https?:\/\//, '');
+            domain = domain.replace(/[\^\$\*\/:].*$/, '');
+            domain = domain.toLowerCase().trim();
+            
+            if (domain && domain.length > 2 && domain.includes('.')) {
+                domains.add(domain);
+            }
+        }
+    }
+    return domains;
+}
+
+function downloadBlockList() {
+    return new Promise((resolve, reject) => {
+        const request = https.get(HAGEZI_LIST_URL, { timeout: 30000 }, (response) => {
+            if (response.statusCode !== 200) {
+                reject(new Error(`HTTP ${response.statusCode}`));
+                return;
+            }
+            
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+            response.on('error', reject);
+        });
+        
+        request.on('error', reject);
+        request.on('timeout', () => {
+            request.destroy();
+            reject(new Error('Timeout'));
+        });
+    });
+}
+
+async function loadCachedBlockList() {
+    try {
+        const cacheData = await fsPromises.readFile(BLOCKLIST_CACHE_PATH, 'utf-8');
+        const cache = JSON.parse(cacheData);
+        
+        if (Date.now() - cache.timestamp < BLOCKLIST_UPDATE_INTERVAL_MS) {
+            return { domains: new Set(cache.domains), fromCache: true, needsUpdate: false };
+        }
+        return { domains: new Set(cache.domains), fromCache: true, needsUpdate: true };
+    } catch (err) {
+        return { domains: new Set(), fromCache: false, needsUpdate: true };
+    }
+}
+
+async function saveBlockListToCache(domains) {
+    try {
+        const cache = {
+            timestamp: Date.now(),
+            count: domains.size,
+            domains: Array.from(domains)
+        };
+        await fsPromises.writeFile(BLOCKLIST_CACHE_PATH, JSON.stringify(cache), 'utf-8');
+    } catch (err) {
+        console.warn('Failed to save blocklist cache:', err.message);
+    }
+}
+
+function applyWhitelist(blockSet) {
+    WHITELIST.forEach(domain => blockSet.delete(domain));
+    return blockSet;
+}
+
+async function updateBlockList() {
+    const cached = await loadCachedBlockList();
+    
+    if (cached.domains.size > 0) {
+        dynamicBlockList = new Set([...cached.domains, ...MANUAL_BLOCK_LIST]);
+        applyWhitelist(dynamicBlockList);
+        console.log(`Blocklist loaded from cache: ${dynamicBlockList.size.toLocaleString()} domains`);
+    } else {
+        dynamicBlockList = new Set(MANUAL_BLOCK_LIST);
+        applyWhitelist(dynamicBlockList);
+        console.log('Using manual fallback blocklist');
+    }
+    
+    if (cached.needsUpdate || !cached.fromCache) {
+        setTimeout(async () => {
+            try {
+                console.log('Downloading HaGeZi Ultimate blocklist...');
+                const text = await downloadBlockList();
+                const parsed = parseAdblockList(text);
+                
+                if (parsed.size > 1000) {
+                    dynamicBlockList = new Set([...parsed, ...MANUAL_BLOCK_LIST]);
+                    applyWhitelist(dynamicBlockList);
+                    await saveBlockListToCache(dynamicBlockList);
+                    console.log(`Blocklist updated: ${dynamicBlockList.size.toLocaleString()} domains active`);
+                    
+                    if (view && view.webContents && !view.webContents.isDestroyed()) {
+                        setupSessionInterceptors(view.webContents.session);
+                    }
+                } else {
+                    console.warn(`Downloaded list too small (${parsed.size}), keeping cache`);
+                }
+            } catch (err) {
+                console.warn('Blocklist update failed, using cache:', err.message);
+            }
+        }, 5000);
+    }
+}
 
 function extractHostname(url) {
     const start = url.indexOf('://') + 3;
@@ -197,6 +289,19 @@ function extractHostname(url) {
     const host = url.substring(start, end);
     const colonPos = host.lastIndexOf(':');
     return colonPos > -1 ? host.substring(0, colonPos) : host;
+}
+
+function isBlockedHostname(hostname) {
+    if (dynamicBlockList.has(hostname)) return true;
+    
+    const parts = hostname.split('.');
+    for (let i = 1; i < parts.length - 1; i++) {
+        const parentDomain = parts.slice(i).join('.');
+        if (dynamicBlockList.has(parentDomain)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function setupSessionInterceptors(sess) {
@@ -229,18 +334,13 @@ function setupSessionInterceptors(sess) {
             callback({ cancel: false });
             return;
         }
-        let shouldBlock = false;
-        if (BLOCKED_DOMAINS.has(hostname)) {
-            shouldBlock = true;
-        } else {
-            for (const domain of BLOCKED_DOMAINS) {
-                if (hostname.endsWith('.' + domain)) {
-                    shouldBlock = true;
-                    break;
-                }
-            }
+        
+        if (WHITELIST.has(hostname)) {
+            callback({ cancel: false });
+            return;
         }
-        callback({ cancel: shouldBlock });
+        
+        callback({ cancel: isBlockedHostname(hostname) });
     });
 }
 
@@ -265,7 +365,7 @@ function showAboutDialog() {
         type: 'info',
         title: 'About',
         message: `CPPS Launcher v${appVersion}`,
-        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: ${FLASH_VERSION} (x86/x64)\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
+        detail: `Created by Dragon9135.\n\nElectron: ${electronVersion}\nClean Flash Player: ${FLASH_VERSION} (x86/x64)\nBlocklist: ${dynamicBlockList.size.toLocaleString()} domains\nNode.js (Build): 18.20.8\n\nThis is an open-source project developed for hobby purposes.`,
         buttons: ['OK']
     });
 }
@@ -422,25 +522,25 @@ const menuTemplate = [
     {
         label: 'Servers',
         submenu: [
-            { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/'); } },
+            { label: 'Club Penguin Zero', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpzero.net/').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login'); } },
+            { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Aventure Pingouin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://aventurepingouin.com/viens-jouer/'); } },
+            { label: 'Aventure Pingouin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://aventurepingouin.com/viens-jouer/').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Antique Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/'); } },
+            { label: 'Antique Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/'); } },
+            { label: 'Original Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://old.ogpenguin.online/').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Club Penguin Atake', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://app.cpatake.boo/'); } },
+            { label: 'Club Penguin Atake', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://app.cpatake.boo/').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Fluffy Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.fluffypenguin.xyz/en/#/login'); } },
+            { label: 'Fluffy Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.fluffypenguin.xyz/en/#/login').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'CPPS.app', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpps.app/#/login'); } },
+            { label: 'CPPS.app', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpps.app/#/login').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'CPPS.to', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/'); } },
+            { label: 'CPPS.to', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://media.cpps.to/play/').catch(() => {}); } },
             { type: 'separator' },
-            { label: 'Waddle World', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.waddleworld.site/'); } }
+            { label: 'Waddle World', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.waddleworld.site/').catch(() => {}); } }
         ]
     },
     {
@@ -452,7 +552,7 @@ const menuTemplate = [
             { type: 'separator' },
             { label: 'Toggle Fit Flash to Window', click: toggleFlashFit },
             { type: 'separator' },
-            { label: 'Flash Player General Settings', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager02.html'); } },
+            { label: 'Flash Player General Settings', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager02.html').catch(() => {}); } },
             { type: 'separator' },
             { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.setZoomFactor(Math.min(3.0, view.webContents.getZoomFactor() + 0.1)); } },
             { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.setZoomFactor(Math.max(0.5, view.webContents.getZoomFactor() - 0.1)); } },
@@ -551,7 +651,7 @@ function createWindow() {
         const antiBotScript = `
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['tr-TR', 'tr', 'en-US', 'en'] });
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
             window.chrome = window.chrome || { runtime: {} };
         `;
         view.webContents.executeJavaScript(antiBotScript).catch(() => {});
@@ -573,9 +673,8 @@ function createWindow() {
     view.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
         if (errorCode === -3) {
             const hostname = extractHostname(validatedURL || '').toLowerCase();
-            if (BLOCKED_DOMAINS.has(hostname) || Array.from(BLOCKED_DOMAINS).some(domain => hostname.endsWith('.' + domain))) {
-                return;
-            }
+            if (WHITELIST.has(hostname)) return;
+            if (isBlockedHostname(hostname)) return;
         }
         if (!isMainFrame) return;
         
@@ -631,7 +730,7 @@ app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     if (!fs.existsSync(pluginPath)) {
         dialog.showMessageBox({
             type: 'error',
@@ -644,16 +743,20 @@ app.whenReady().then(() => {
         });
         return;
     }
+    
+    await updateBlockList();
+    
     createWindow();
 });
 
 process.on('unhandledRejection', (reason) => {
     if (!isDev && mainWindow && !mainWindow.isDestroyed()) {
+        const reasonText = reason instanceof Error ? reason.message : String(reason);
         dialog.showMessageBox(mainWindow, {
             type: 'error',
             title: 'Unhandled Error',
             message: 'An unexpected error occurred (Promise Rejection).',
-            detail: `Details: ${reason}`,
+            detail: `Details: ${reasonText}`,
             buttons: ['OK']
         });
     }
