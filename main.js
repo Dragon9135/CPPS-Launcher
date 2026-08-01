@@ -201,7 +201,6 @@ function extractHostname(url) {
 
 function setupSessionInterceptors(sess) {
     if (!sess) return;
-    
     sess.webRequest.onHeadersReceived((details, callback) => {
         try {
             const headers = { ...details.responseHeaders };
@@ -226,14 +225,11 @@ function setupSessionInterceptors(sess) {
     sess.webRequest.onBeforeRequest((details, callback) => {
         const url = details.url || '';
         const hostname = extractHostname(url).toLowerCase();
-        
         if (!hostname) {
             callback({ cancel: false });
             return;
         }
-        
         let shouldBlock = false;
-        
         if (BLOCKED_DOMAINS.has(hostname)) {
             shouldBlock = true;
         } else {
@@ -244,7 +240,6 @@ function setupSessionInterceptors(sess) {
                 }
             }
         }
-        
         callback({ cancel: shouldBlock });
     });
 }
@@ -259,8 +254,7 @@ function resizeView() {
             width: windowWidth,
             height: windowHeight - topMenuHeight
         });
-    } catch (err) {
-    }
+    } catch (err) {}
 }
 
 function showAboutDialog() {
@@ -279,10 +273,8 @@ function showAboutDialog() {
 async function clearBrowsingAndFlashData() {
     if (isClearingData) return;
     isClearingData = true;
-    
     try {
         if (!mainWindow || mainWindow.isDestroyed()) return;
-        
         const confirmation = await dialog.showMessageBox(mainWindow, {
             type: 'question',
             title: 'Confirm Data Clearing',
@@ -292,7 +284,6 @@ async function clearBrowsingAndFlashData() {
             defaultId: 1,
             cancelId: 1
         });
-        
         if (confirmation.response === 1) return;
 
         let flashDataCleared = false;
@@ -359,7 +350,6 @@ async function clearBrowsingAndFlashData() {
 
 async function toggleFlashFit() {
     if (!view || !view.webContents || view.webContents.isDestroyed()) return;
-    
     const previousState = isFlashFitted;
     isFlashFitted = !isFlashFitted;
     
@@ -490,6 +480,18 @@ function resetFlashFitState() {
     }
 }
 
+const GLOBAL_HIDE_SCROLLBAR_CSS = `
+    ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    html, body {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+`;
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 960, height: 640, minWidth: 900, minHeight: 600,
@@ -520,6 +522,11 @@ function createWindow() {
     resizeView();
     mainWindow.on('resize', resizeView);
     setupSessionInterceptors(view.webContents.session);
+
+    view.webContents.on('dom-ready', () => {
+        if (!view || view.webContents.isDestroyed()) return;
+        view.webContents.insertCSS(GLOBAL_HIDE_SCROLLBAR_CSS).catch(() => {});
+    });
 
     view.webContents.on('crashed', (event, killed) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
