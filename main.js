@@ -81,9 +81,10 @@ app.commandLine.appendSwitch('disable-features', [
     'MediaRouter', 'CalculateNativeWinOcclusion', 'OptimizationGuideModelDownloading',
     'InterestFeedContentSuggestions', 'InterestFeedSparePrefetch', 'GlobalMediaControls',
     'TabHoverCards', 'TabHoverCardImages', 'UseEcoQoSForBackgroundProcess',
-    'CanvasOOPRasterization', 'SurfaceControl', 'DirectManipulationStylus', 'disable-blink-features', 'AutomationControlled'
+    'CanvasOOPRasterization', 'SurfaceControl', 'DirectManipulationStylus'
 ].join(','));
 
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
 app.commandLine.appendSwitch('ppapi-flash-path', pluginPath);
 app.commandLine.appendSwitch('ppapi-flash-version', FLASH_VERSION);
 app.commandLine.appendSwitch('allow-outdated-plugins');
@@ -575,7 +576,6 @@ function createWindow() {
             if (BLOCKED_DOMAINS.has(hostname) || Array.from(BLOCKED_DOMAINS).some(domain => hostname.endsWith('.' + domain))) {
                 return;
             }
-            return;
         }
         if (!isMainFrame) return;
         
