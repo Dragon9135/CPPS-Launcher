@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const https = require('https');
+const readline = require('readline');
 const RPC = require('discord-rpc');
 
 const isDev = !app.isPackaged;
@@ -35,6 +36,7 @@ let lastResetTime = 0;
 const RESET_COOLDOWN_MS = 500;
 
 let dynamicBlockList = new Set();
+let hostnameCache = new Map();
 
 const clientId = '1432079723126849609';
 const rpc = new RPC.Client({ transport: 'ipc' });
@@ -155,58 +157,58 @@ const WHITELIST = new Set([
     'challenges.cloudflare.com', 'turnstile.com'
 ]);
 
-function parseAdblockList(text) {
-    const domains = new Set();
-    const lines = text.split('\n');
-    
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('!') || trimmed.startsWith('#') || trimmed.startsWith('[')) continue;
-        if (trimmed.startsWith('@@')) continue;
-        if (trimmed.startsWith('/') || trimmed.includes('/')) continue;
-        
-        if (trimmed.startsWith('||')) {
-            let domain = trimmed.substring(2);
-            domain = domain.replace(/[\^\$\*].*$/, '');
-            domain = domain.replace(/[\/:].*$/, '');
-            domain = domain.toLowerCase().trim();
-            
-            if (domain && domain.length > 2 && domain.includes('.') && !domain.includes('*')) {
-                domains.add(domain);
-            }
-        }
-        else if (trimmed.startsWith('|') && !trimmed.startsWith('||')) {
-            let domain = trimmed.substring(1);
-            domain = domain.replace(/^https?:\/\//, '');
-            domain = domain.replace(/[\^\$\*\/:].*$/, '');
-            domain = domain.toLowerCase().trim();
-            
-            if (domain && domain.length > 2 && domain.includes('.')) {
-                domains.add(domain);
-            }
-        }
-    }
-    return domains;
-}
-
 function downloadBlockList() {
     return new Promise((resolve, reject) => {
+        let settled = false;
+        const res = (val) => { if (!settled) { settled = true; resolve(val); } };
+        const rej = (err) => { if (!settled) { settled = true; reject(err); } };
+
         const request = https.get(HAGEZI_LIST_URL, { timeout: 30000 }, (response) => {
             if (response.statusCode !== 200) {
-                reject(new Error(`HTTP ${response.statusCode}`));
+                rej(new Error(`HTTP ${response.statusCode}`));
                 return;
             }
             
-            const chunks = [];
-            response.on('data', (chunk) => chunks.push(chunk));
-            response.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
-            response.on('error', reject);
+            const rl = readline.createInterface({
+                input: response,
+                crlfDelay: Infinity
+            });
+            
+            const domains = new Set();
+            rl.on('line', (line) => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('!') || trimmed.startsWith('#') || trimmed.startsWith('[')) return;
+                if (trimmed.startsWith('@@') || trimmed.startsWith('/') || trimmed.includes('/')) return;
+                
+                if (trimmed.startsWith('||')) {
+                    let domain = trimmed.substring(2);
+                    domain = domain.replace(/[\^\$\*].*$/, '');
+                    domain = domain.replace(/[\/:].*$/, '');
+                    domain = domain.toLowerCase().trim();
+                    
+                    if (domain && domain.length > 2 && domain.includes('.') && !domain.includes('*')) {
+                        domains.add(domain);
+                    }
+                } else if (trimmed.startsWith('|')) {
+                    let domain = trimmed.substring(1);
+                    domain = domain.replace(/^https?:\/\//, '');
+                    domain = domain.replace(/[\^\$\*\/:].*$/, '');
+                    domain = domain.toLowerCase().trim();
+                    
+                    if (domain && domain.length > 2 && domain.includes('.')) {
+                        domains.add(domain);
+                    }
+                }
+            });
+            
+            rl.on('close', () => res(domains));
+            rl.on('error', rej);
         });
         
-        request.on('error', reject);
+        request.on('error', rej);
         request.on('timeout', () => {
             request.destroy();
-            reject(new Error('Timeout'));
+            rej(new Error('Timeout'));
         });
     });
 }
@@ -255,15 +257,16 @@ async function updateBlockList() {
         applyWhitelist(dynamicBlockList);
         console.log('Using manual fallback blocklist');
     }
+    hostnameCache.clear();
     
     if (cached.needsUpdate || !cached.fromCache) {
         setTimeout(async () => {
             try {
                 console.log('Downloading HaGeZi Ultimate blocklist...');
-                const text = await downloadBlockList();
-                const parsed = parseAdblockList(text);
+                const parsed = await downloadBlockList();
                 
                 if (parsed.size > 1000) {
+                    hostnameCache.clear();
                     dynamicBlockList = new Set([...parsed, ...MANUAL_BLOCK_LIST]);
                     applyWhitelist(dynamicBlockList);
                     await saveBlockListToCache(dynamicBlockList);
@@ -283,41 +286,75 @@ async function updateBlockList() {
 }
 
 async function removeDirRecursive(dirPath) {
-    if (fs.existsSync(dirPath)) {
-        for (const entry of await fsPromises.readdir(dirPath, { withFileTypes: true })) {
-            const fullPath = path.join(dirPath, entry.name);
-            if (entry.isDirectory()) {
-                await removeDirRecursive(fullPath);
-            } else {
-                await fsPromises.unlink(fullPath);
+    try {
+        await fsPromises.rmdir(dirPath, { recursive: true, maxRetries: 3 });
+    } catch (err) {
+        if (fs.existsSync(dirPath)) {
+            for (const entry of await fsPromises.readdir(dirPath, { withFileTypes: true })) {
+                const fullPath = path.join(dirPath, entry.name);
+                if (entry.isDirectory()) {
+                    await removeDirRecursive(fullPath);
+                } else {
+                    await fsPromises.unlink(fullPath).catch(() => {});
+                }
             }
+            await fsPromises.rmdir(dirPath).catch(() => {});
         }
-        await fsPromises.rmdir(dirPath);
     }
 }
 
 function extractHostname(url) {
-    const start = url.indexOf('://') + 3;
-    if (start < 3) return '';
+    let start = url.indexOf('://');
+    if (start === -1) return '';
+    start += 3;
+    
     let end = url.indexOf('/', start);
-    if (end === -1) end = url.indexOf('?', start);
-    if (end === -1) end = url.length;
-    const host = url.substring(start, end);
+    if (end === -1) {
+        end = url.indexOf('?', start);
+        if (end === -1) {
+            end = url.indexOf('#', start);
+            if (end === -1) end = url.length;
+        }
+    }
+    let host = url.substring(start, end);
+    
+    const atPos = host.lastIndexOf('@');
+    if (atPos !== -1) {
+        host = host.substring(atPos + 1);
+    }
+    
+    if (host.startsWith('[')) {
+        const bracketEnd = host.indexOf(']');
+        if (bracketEnd !== -1) {
+            return host.substring(1, bracketEnd);
+        }
+    }
+    
     const colonPos = host.lastIndexOf(':');
     return colonPos > -1 ? host.substring(0, colonPos) : host;
 }
 
 function isBlockedHostname(hostname) {
-    if (dynamicBlockList.has(hostname)) return true;
+    if (hostnameCache.has(hostname)) return hostnameCache.get(hostname);
     
-    const parts = hostname.split('.');
-    for (let i = 1; i < parts.length - 1; i++) {
-        const parentDomain = parts.slice(i).join('.');
-        if (dynamicBlockList.has(parentDomain)) {
-            return true;
+    let blocked = dynamicBlockList.has(hostname);
+    if (!blocked) {
+        let dotIndex = hostname.indexOf('.');
+        while (dotIndex !== -1) {
+            if (dynamicBlockList.has(hostname.substring(dotIndex + 1))) {
+                blocked = true;
+                break;
+            }
+            dotIndex = hostname.indexOf('.', dotIndex + 1);
         }
     }
-    return false;
+    
+    if (hostnameCache.size < 50000) {
+        hostnameCache.set(hostname, blocked);
+    } else {
+        hostnameCache.clear();
+    }
+    return blocked;
 }
 
 function setupSessionInterceptors(sess) {
@@ -464,35 +501,37 @@ async function clearBrowsingAndFlashData() {
     }
 }
 
+const FLASH_FIT_SCRIPT_TEMPLATE = `
+  (function() {
+    const flashElement = document.querySelector('embed[type="application/x-shockwave-flash"], object[type="application/x-shockwave-flash"], object[classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"]');
+    if (!flashElement) return 'not_found';
+    const shouldFit = {IS_FITTED};
+    let container = flashElement.parentElement;
+    for(let i=0; i<3 && container && container.tagName !== 'BODY'; i++) { 
+      if (container.id || container.classList.length > 0) break; 
+      container = container.parentElement; 
+    }
+    const fitStyles = { position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh', zIndex: '999999', margin: '0', padding: '0', transform: 'none', transformOrigin: 'unset' };
+    const revertStyles = { position: '', top: '', left: '', width: '', height: '', zIndex: '', margin: '', padding: '', transform: '', transformOrigin: '' };
+    if (shouldFit) { 
+      Object.assign(flashElement.style, fitStyles); 
+      if (container) Object.assign(container.style, { overflow: 'visible' }); 
+      return 'fitted'; 
+    } else { 
+      Object.assign(flashElement.style, revertStyles); 
+      if (container) Object.assign(container.style, { overflow: '' }); 
+      return 'reverted'; 
+    }
+  })();
+`;
+const HIDE_SCROLLBAR_CSS = 'html, body { overflow: hidden !important; }';
+
 async function toggleFlashFit() {
     if (!view || !view.webContents || view.webContents.isDestroyed()) return;
     const previousState = isFlashFitted;
     isFlashFitted = !isFlashFitted;
     
-    const script = `
-      (function() {
-        const flashElement = document.querySelector('embed[type="application/x-shockwave-flash"], object[type="application/x-shockwave-flash"], object[classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"]');
-        if (!flashElement) return 'not_found';
-        const shouldFit = ${isFlashFitted};
-        let container = flashElement.parentElement;
-        for(let i=0; i<3 && container && container.tagName !== 'BODY'; i++) { 
-          if (container.id || container.classList.length > 0) break; 
-          container = container.parentElement; 
-        }
-        const fitStyles = { position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh', zIndex: '999999', margin: '0', padding: '0', transform: 'none', transformOrigin: 'unset' };
-        const revertStyles = { position: '', top: '', left: '', width: '', height: '', zIndex: '', margin: '', padding: '', transform: '', transformOrigin: '' };
-        if (shouldFit) { 
-          Object.assign(flashElement.style, fitStyles); 
-          if (container) Object.assign(container.style, { overflow: 'visible' }); 
-          return 'fitted'; 
-        } else { 
-          Object.assign(flashElement.style, revertStyles); 
-          if (container) Object.assign(container.style, { overflow: '' }); 
-          return 'reverted'; 
-        }
-      })();
-    `;
-    const HIDE_SCROLLBAR_CSS = 'html, body { overflow: hidden !important; }';
+    const script = FLASH_FIT_SCRIPT_TEMPLATE.replace('{IS_FITTED}', isFlashFitted);
     
     try {
         if (isFlashFitted) {
