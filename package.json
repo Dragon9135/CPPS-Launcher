@@ -28,8 +28,7 @@
       "index.html",
       "preload.js",
       "package.json",
-      "icon.ico",
-      "icon.png"
+      "icon.ico"
     ],
     "extraResources": [
       {
