@@ -581,6 +581,8 @@ const menuTemplate = [
             { type: 'separator' },
             { label: 'Club Penguin Dimensions', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpdimensions.com/pt/#/login').catch(() => {}); } },
             { type: 'separator' },
+            { label: 'Club Penguin Infinite', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.cpinfinite.com/#/login').catch(() => {}); } },
+            { type: 'separator' },
             { label: 'Aventure Pingouin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://aventurepingouin.com/viens-jouer/').catch(() => {}); } },
             { type: 'separator' },
             { label: 'Antique Penguin', click: () => { if (view && !view.webContents.isDestroyed()) view.webContents.loadURL('https://play.antiquepengu.in/').catch(() => {}); } },
