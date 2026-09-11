@@ -12,6 +12,7 @@ Easily switch between popular CPPS servers via the `Servers` menu:
 
 * Club Penguin Zero
 * Club Penguin Dimensions
+* Club Penguin Infinite
 * Aventure Pingouin
 * Antique Penguin
 * Original Penguin
